@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+results/
+smoke-run-auto/
+smoke-run-final/

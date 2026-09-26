@@ -1,0 +1,12 @@
+{
+  "reference": "/Users/shikshanayak/Downloads/smoke/smoke.fa",
+  "region": "smoke_1mb",
+  "samples": [
+    "smoke_01",
+    "smoke_02",
+    "smoke_03"
+  ],
+  "filtered_vcf": "cohort.filtered.vcf.gz",
+  "variants_tsv": "variants.tsv",
+  "qc_report": "qc/multiqc_report.html"
+}
