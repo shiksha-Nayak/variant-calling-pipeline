@@ -1,0 +1,18 @@
+{
+  "reference": "/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+  "region": "chr20:1-10000000",
+  "samples": [
+    "NA12878",
+    "NA12891",
+    "NA12892",
+    "NA07357",
+    "NA12003",
+    "NA10851",
+    "NA12813",
+    "NA12873"
+  ],
+  "filtered_vcf": "cohort.filtered.vcf.gz",
+  "variants_tsv": "variants.tsv",
+  "qc_report": "qc/multiqc_report.html",
+  "git_sha": "9d3f9a6257338a55b9ffc5b6893bc4b174b8dbbf"
+}
