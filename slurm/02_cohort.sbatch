@@ -14,8 +14,6 @@ mkdir -p logs
 
 source "${SLURM_SUBMIT_DIR}/conf/slurm.env"
 
-module load miniconda3/25.9.1
-source activate "${CONDA_ENV}"
 
 THREADS="${SLURM_CPUS_PER_TASK}"
 export THREADS
@@ -62,28 +60,16 @@ while IFS=$'\t' read -r SAMPLE CONDITION REPLICATE LIBRARY R1 R2; do
     fi
 done < <(read_samplesheet "${SAMPLESHEET}")
 
-bash stages/06_joint_genotyping.sh \
-    "${SAMPLESHEET}" \
-    "${RUN_DIR}" \
-    "${REF}" \
-    "${REGION}"
-
-bash stages/07_filter_variants.sh \
-    "${SAMPLESHEET}" \
-    "${RUN_DIR}" \
-    "${REF}"
-
-bash stages/08_multiqc.sh \
-    "${SAMPLESHEET}" \
-    "${RUN_DIR}"
-
-python3 stages/10_export_tsv.py \
-    "${RUN_DIR}/variants/cohort.filtered.vcf.gz" \
-    "${RUN_DIR}"
-
-bash stages/09_publish.sh \
-    "${RUN_DIR}" \
-    "${REF}" \
-    "${REGION}"
+apptainer exec --cleanenv \
+    --env THREADS="${THREADS}" \
+    --env TMPDIR="${TMPDIR}" \
+    --env SLURM_JOB_ID="${SLURM_JOB_ID}" \
+    --env SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK}" \
+    --env PIPELINE_DIR="${PIPELINE_DIR}" \
+    --env SAMPLESHEET="${SAMPLESHEET}" \
+    --env RUN_DIR="${RUN_DIR}" \
+    --bind /courses/BINF6610.202710,/scratch/${USER} \
+    "${SIF}" \
+    bash "${PIPELINE_DIR}/slurm/cohort_container_block.sh"
 
 echo "Cohort stages completed successfully." >&2
