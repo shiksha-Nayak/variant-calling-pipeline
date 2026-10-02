@@ -86,3 +86,69 @@
 - Check the output of the stage immediately before the failure.
 - Confirm that the reference, samplesheet, and output paths are correct.
 - Rerun only the failed stage after correcting the issue.
+
+# Week 2 Deliberate Slurm Failures
+
+The following failures were deliberately reproduced on Explorer to document Slurm behavior and recovery.
+
+### Failure 1: Deliberately short time limit
+
+A test job (10760448) was submitted with `--time=00:02:00` while running `sleep 180`. Slurm reported the main job state as `TIMEOUT` after 00:02:06.
+
+The batch step was cancelled with exit code 0:15, while the external step was recorded as completed. This demonstrates that a job exceeding its Slurm time limit is terminated by the scheduler.
+
+```text
+10760448 TIMEOUT 00:02:06 0:0
+10760448.batch CANCELLED 00:02:06 0:15
+10760448.extern COMPLETED 00:02:06 0:0
+```
+
+### Failure 2: One array task fails with exit 1 and cohort uses afterok
+
+Array job 10760502 had two tasks. Task 1 completed successfully with exit code 0:0, while task 2 failed with exit code 1:0. The dependent cohort job 10760543 was cancelled because its afterok dependency could not be satisfied.
+
+```text
+10760502_1 COMPLETED 00:00:01 0:0
+10760502_2 FAILED    00:00:02 1:0
+10760543   CANCELLED 00:00:00 0:0
+```
+
+Slurm reported the specific reason as `DependencyNeverSatisfied` with `Dependency=afterok:10760502_*(failed)`. Therefore, the cohort did not run after the failed array task, which is the intended behavior of the afterok dependency.
+
+### Failure 3: Array requests task 9 but the samplesheet has only 8 samples
+
+Test array 10760641 was submitted with --array=1-9 against the course samplesheet, which contains 8 sample rows. Tasks 1-8 completed successfully, while task 9 failed with exit code 64 because the out-of-range guard detected that no sample exists for row 9.
+
+```text
+10760641_1 COMPLETED 0:0
+10760641_2 COMPLETED 0:0
+10760641_3 COMPLETED 0:0
+10760641_4 COMPLETED 0:0
+10760641_5 COMPLETED 0:0
+10760641_6 COMPLETED 0:0
+10760641_7 COMPLETED 0:0
+10760641_8 COMPLETED 0:0
+10760641_9 FAILED    64:0
+```
+
+The exit code 64 came from the explicit no-row guard in the test script. This prevents an invalid array task from continuing with an empty sample ID.
+
+### Failure 4: Job cancelled mid-write and then resubmitted
+
+The first test job, 10760692, was cancelled while it was writing the output file. Slurm recorded the job as CANCELLED after 22 seconds, with the batch step ending with exit code 0:15.
+
+The job was then resubmitted as 10760728. The resubmitted job completed successfully with exit code 0:0 after 4 minutes 34 seconds. The recovered output contained all 1,000 expected lines.
+
+```text
+10760692       CANCELLED  00:00:21  0:0
+10760692.ba+   CANCELLED  00:00:22  0:15
+10760692.ex+   COMPLETED  00:00:21  0:0
+
+10760728       COMPLETED  00:04:34  0:0
+10760728.ba+   COMPLETED  00:04:34  0:0
+10760728.ex+   COMPLETED  00:05:00  0:0
+
+1000 /scratch/nayak.shi/w2-tests/failure4/output.txt
+```
+
+The cancellation left the first run incomplete, demonstrating what happens when a job is stopped during a write. Resubmitting the job allowed the output to be regenerated completely, providing a successful recovery path.

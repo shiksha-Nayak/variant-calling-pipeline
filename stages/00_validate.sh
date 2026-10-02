@@ -40,6 +40,9 @@ while IFS=$'\t' read -r sample_id condition replicate library_type r1_fastq r2_f
     if [[ ! -f "$r1_fastq" ]]; then
         echo "ERROR: R1 file missing for $sample_id: $r1_fastq" >&2
         errors=$((errors + 1))
+    elif ! gzip -t "$r1_fastq" 2>/dev/null; then
+        echo "ERROR: R1 gzip integrity check failed for $sample_id: $r1_fastq" >&2
+        errors=$((errors + 1))
     fi
 
     if [[ "$library_type" == "paired" ]]; then
@@ -48,6 +51,9 @@ while IFS=$'\t' read -r sample_id condition replicate library_type r1_fastq r2_f
             errors=$((errors + 1))
         elif [[ ! -f "$r2_fastq" ]]; then
             echo "ERROR: R2 file missing for $sample_id: $r2_fastq" >&2
+            errors=$((errors + 1))
+        elif ! gzip -t "$r2_fastq" 2>/dev/null; then
+            echo "ERROR: R2 gzip integrity check failed for $sample_id: $r2_fastq" >&2
             errors=$((errors + 1))
         fi
     fi
