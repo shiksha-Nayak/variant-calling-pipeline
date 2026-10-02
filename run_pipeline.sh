@@ -2,17 +2,16 @@
 set -euo pipefail
 
 SAMPLESHEET="${1:?Usage: ./run_pipeline.sh samplesheet.csv output_dir}"
+
 OUTDIR="${2:?Missing output directory}"
 
-source conf/pipeline.env
-
-REF="${REF:?Reference not set in conf/pipeline.env}"
-REGION="${REGION:?Region not set in conf/pipeline.env}"
+source lib/common.sh
 
 echo "Starting variant-calling pipeline..." >&2
 
 echo "Stage 0: Validate samplesheet" >&2
 bash stages/00_validate.sh "$SAMPLESHEET"
+
 TARGET="${3:-all}"
 
 if [[ "$TARGET" == "validate" ]]; then
@@ -46,8 +45,8 @@ bash stages/08_multiqc.sh "$SAMPLESHEET" "$OUTDIR"
 
 echo "Stage 10: Export variants to TSV" >&2
 python3 stages/10_export_tsv.py \
-  "$OUTDIR/variants/cohort.filtered.vcf.gz" \
-  "$OUTDIR"
+    "$OUTDIR/variants/cohort.filtered.vcf.gz" \
+    "$OUTDIR"
 
 echo "Stage 9: Publish final outputs" >&2
 bash stages/09_publish.sh "$OUTDIR" "$REF" "$REGION"

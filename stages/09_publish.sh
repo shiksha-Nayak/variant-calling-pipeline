@@ -25,38 +25,6 @@ if [[ -f "$VCF.tbi" ]]; then
     cp "$VCF.tbi" "$OUTDIR/cohort.filtered.vcf.gz.tbi"
 fi
 
-python3 - "$OUTDIR" "$REF" "$REGION" "$SAMPLE_MAP" <<'PY'
-import json
-import sys
-from pathlib import Path
+bash lib/write_manifest.sh "$OUTDIR" "$REF" "$REGION" "$SAMPLE_MAP"
 
-outdir = Path(sys.argv[1])
-ref = sys.argv[2]
-region = sys.argv[3]
-sample_map = Path(sys.argv[4])
-
-samples = []
-if sample_map.is_file():
-    with open(sample_map) as f:
-        for line in f:
-            fields = line.strip().split()
-            if fields:
-                samples.append(fields[0])
-
-manifest = {
-    "reference": ref,
-    "region": region,
-    "samples": samples,
-    "filtered_vcf": "cohort.filtered.vcf.gz",
-    "variants_tsv": "variants.tsv",
-    "qc_report": "qc/multiqc_report.html"
-}
-
-with open(outdir / "manifest.json", "w") as f:
-    json.dump(manifest, f, indent=2)
-    f.write("\n")
-
-print("Manifest created.")
-PY
-
-echo "Publishing completed."
+echo "Publishing completed." >&2

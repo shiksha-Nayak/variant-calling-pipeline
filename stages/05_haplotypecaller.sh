@@ -6,19 +6,24 @@ OUTDIR="${2:?Missing output directory}"
 REF="${3:?Missing reference FASTA}"
 REGION="${4:?Missing calling region}"
 
+source lib/common.sh
+
+THREADS="${SLURM_CPUS_PER_TASK:-1}"
+
 mkdir -p "$OUTDIR/gvcf"
 
-while IFS=, read -r sample_id condition replicate library_type r1_fastq r2_fastq; do
-    [[ "$sample_id" == "sample_id" || -z "$sample_id" ]] && continue
+while IFS=$'\t' read -r sample_id condition replicate library_type r1_fastq r2_fastq; do
+    [[ -z "$sample_id" ]] && continue
 
-    python3 "$HOME/Downloads/gatk-4.7.0.0/gatk" HaplotypeCaller \
+    gatk HaplotypeCaller \
         -R "$REF" \
         -I "$OUTDIR/markdup/${sample_id}.markdup.bam" \
         -O "$OUTDIR/gvcf/${sample_id}.g.vcf.gz" \
         -ERC GVCF \
+        --native-pair-hmm-threads "$THREADS" \
         -L "$REGION"
 
-    echo "HaplotypeCaller completed: $sample_id"
-done < "$SAMPLESHEET"
+    echo "HaplotypeCaller completed: $sample_id" >&2
+done < <(read_samplesheet "$SAMPLESHEET")
 
-echo "GVCF calling completed."
+echo "GVCF calling completed." >&2

@@ -13,4 +13,4 @@ python3 -m multiqc \
     -n multiqc_report.html \
     --force
 
-echo "MultiQC report created: $OUTDIR/qc/multiqc_report.html"
+echo "MultiQC report created: $OUTDIR/qc/multiqc_report.html" >&2

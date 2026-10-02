@@ -8,30 +8,22 @@ if [[ ! -f "$SAMPLESHEET" ]]; then
     exit 1
 fi
 
-SHEET_DIR="$(cd "$(dirname "$SAMPLESHEET")" && pwd)"
-expected="sample_id,condition,replicate,library_type,r1_fastq,r2_fastq"
-header="$(head -n 1 "$SAMPLESHEET" | tr -d '\r')"
+source lib/common.sh
 
-if [[ "$header" != "$expected" ]]; then
-    echo "ERROR: Incorrect samplesheet header" >&2
-    exit 1
-fi
-
-seen_ids="|"
 errors=0
+declare -A seen_ids
 
-while IFS=, read -r sample_id condition replicate library_type r1_fastq r2_fastq; do
-    sample_id="${sample_id//$'\r'/}"
-    [[ -z "$sample_id" ]] && continue
+while IFS=$'\t' read -r sample_id condition replicate library_type r1_fastq r2_fastq; do
+    if [[ -z "$sample_id" ]]; then
+        continue
+    fi
 
-    case "$seen_ids" in
-        *"|$sample_id|"*)
-            echo "ERROR: Duplicate sample ID: $sample_id" >&2
-            errors=$((errors + 1))
-            continue
-            ;;
-    esac
-    seen_ids="${seen_ids}${sample_id}|"
+    if [[ -n "${seen_ids[$sample_id]:-}" ]]; then
+        echo "ERROR: Duplicate sample ID: $sample_id" >&2
+        errors=$((errors + 1))
+        continue
+    fi
+    seen_ids["$sample_id"]=1
 
     if [[ -z "$condition" || -z "$replicate" || -z "$library_type" || -z "$r1_fastq" ]]; then
         echo "ERROR: Missing required field for $sample_id" >&2
@@ -40,18 +32,13 @@ while IFS=, read -r sample_id condition replicate library_type r1_fastq r2_fastq
     fi
 
     if [[ "$library_type" != "paired" && "$library_type" != "single" ]]; then
-        echo "ERROR: Invalid library type for $sample_id" >&2
+        echo "ERROR: Invalid library type for $sample_id: $library_type" >&2
         errors=$((errors + 1))
         continue
     fi
 
-    [[ "$r1_fastq" = /* ]] || r1_fastq="$SHEET_DIR/$r1_fastq"
-
     if [[ ! -f "$r1_fastq" ]]; then
         echo "ERROR: R1 file missing for $sample_id: $r1_fastq" >&2
-        errors=$((errors + 1))
-    elif [[ "$r1_fastq" == *.gz ]] && ! gzip -t "$r1_fastq" 2>/dev/null; then
-        echo "ERROR: Corrupt or truncated R1 gzip for $sample_id: $r1_fastq" >&2
         errors=$((errors + 1))
     fi
 
@@ -59,25 +46,19 @@ while IFS=, read -r sample_id condition replicate library_type r1_fastq r2_fastq
         if [[ -z "$r2_fastq" ]]; then
             echo "ERROR: R2 path missing for $sample_id" >&2
             errors=$((errors + 1))
-        else
-            [[ "$r2_fastq" = /* ]] || r2_fastq="$SHEET_DIR/$r2_fastq"
-
-            if [[ ! -f "$r2_fastq" ]]; then
-                echo "ERROR: R2 file missing for $sample_id: $r2_fastq" >&2
-                errors=$((errors + 1))
-            elif [[ "$r2_fastq" == *.gz ]] && ! gzip -t "$r2_fastq" 2>/dev/null; then
-                echo "ERROR: Corrupt or truncated R2 gzip for $sample_id: $r2_fastq" >&2
-                errors=$((errors + 1))
-            fi
+        elif [[ ! -f "$r2_fastq" ]]; then
+            echo "ERROR: R2 file missing for $sample_id: $r2_fastq" >&2
+            errors=$((errors + 1))
         fi
     fi
 
     echo "Validated sample: $sample_id" >&2
-done < <(tail -n +2 "$SAMPLESHEET")
+
+done < <(read_samplesheet "$SAMPLESHEET")
 
 if (( errors > 0 )); then
-    echo "Validation failed with $errors error(s)." >&2
+    echo "ERROR: Validation failed with $errors problem(s)." >&2
     exit 1
 fi
 
-echo "Validation completed!" >&2
+echo "Validation completed successfully." >&2
