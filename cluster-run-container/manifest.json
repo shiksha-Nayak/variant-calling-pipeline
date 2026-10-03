@@ -1,98 +1,21 @@
 {
-  "pipeline": {
-    "name": "variant-call",
-    "version": "3.0.0",
-    "implementation": "singularity",
-    "git_sha": "06f6a296db4567c3da6e722ac4210a556e0ac552",
-    "run_id": "10769435",
-    "started_at": "2026-10-02T21:56:08Z",
-    "finished_at": "2026-10-02T21:57:21Z",
-    "exit_status": "success"
-  },
-  "platform": {
-    "kind": "singularity-hpc",
-    "container_digests": {
-      "variant-call": "sha256:362030c575c53f64a9bef692c9ebe84ef6cc7d064d6513acabc8a68d30a37747"
-    }
-  },
-  "reference": {
-    "genome": "/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa",
-    "region": "chr20:1-10000000"
-  },
+  "reference": "/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+  "region": "chr20:1-10000000",
   "samples": [
-    {
-      "sample_id": "NA12878",
-      "library_type": "paired",
-      "condition": "affected"
-    },
-    {
-      "sample_id": "NA12891",
-      "library_type": "paired",
-      "condition": "affected"
-    },
-    {
-      "sample_id": "NA12892",
-      "library_type": "single",
-      "condition": "unaffected"
-    },
-    {
-      "sample_id": "NA07357",
-      "library_type": "paired",
-      "condition": "unaffected"
-    },
-    {
-      "sample_id": "NA12003",
-      "library_type": "single",
-      "condition": "affected"
-    },
-    {
-      "sample_id": "NA10851",
-      "library_type": "paired",
-      "condition": "unaffected"
-    },
-    {
-      "sample_id": "NA12813",
-      "library_type": "paired",
-      "condition": "affected"
-    },
-    {
-      "sample_id": "NA12873",
-      "library_type": "paired",
-      "condition": "unaffected"
-    }
+    "NA12878",
+    "NA12891",
+    "NA12892",
+    "NA07357",
+    "NA12003",
+    "NA10851",
+    "NA12813",
+    "NA12873"
   ],
-  "outputs": [
-    {
-      "stage": "publish",
-      "type": "cohort_vcf",
-      "path": "cohort.filtered.vcf.gz",
-      "checksum": "sha256:43ec506e6d8ba2c2c613b48df115c660066e389fc759fd3dc5a16139bacc43e9"
-    },
-    {
-      "stage": "publish",
-      "type": "cohort_vcf_index",
-      "path": "cohort.filtered.vcf.gz.tbi",
-      "checksum": "sha256:0e4b45277df9b5b0e42a3b7b3071ff773358e4b552314b97a914d2471f9ab15f"
-    },
-    {
-      "stage": "analyze",
-      "type": "variant_table",
-      "path": "variants.tsv",
-      "checksum": "sha256:a3c3e38739a3566b03386fb663e21ddc744dec4a340d9bc38ed64b49d491e8ae"
-    },
-    {
-      "stage": "qc_report",
-      "type": "multiqc",
-      "path": "qc/multiqc_report.html",
-      "checksum": "sha256:fc4417a6bad80b487a563cb902fad94723631b9da91d04074807571801e42be0"
-    }
-  ],
-  "metrics": [
-    {
-      "metric": "n_variants_pass",
-      "value": 36853,
-      "unit": "count",
-      "stage": "analyze"
-    }
-  ]
+  "filtered_vcf": "cohort.filtered.vcf.gz",
+  "git_sha": "36fe1827ba84322f4c45b9bd692f1378b2b2525c",
+  "platform": {
+    "container": "/scratch/nayak.shi/containers/variant-call.sif",
+    "slurm_job_id": "10773474",
+    "slurm_cpus_per_task": "4"
+  }
 }

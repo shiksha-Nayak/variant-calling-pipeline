@@ -70,6 +70,6 @@ apptainer exec --cleanenv \
     --env RUN_DIR="${RUN_DIR}" \
     --bind /courses/BINF6610.202710,/scratch/${USER} \
     "${SIF}" \
-    bash "${PIPELINE_DIR}/slurm/cohort_container_block.sh"
+    bash run_pipeline.sh "${SAMPLESHEET}" "${RUN_DIR}"
 
 echo "Cohort stages completed successfully." >&2

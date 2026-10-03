@@ -24,7 +24,7 @@ SAMPLE="$(awk -F',' -v n="${SLURM_ARRAY_TASK_ID}" 'NR == n + 1 { print $1 }' "${
 }
 
 THREADS="${SLURM_CPUS_PER_TASK}"
-export THREADS
+export THREADS REF REGION
 
 export TMPDIR="/tmp/${SLURM_JOB_ID}"
 mkdir -p "${TMPDIR}"
@@ -39,6 +39,6 @@ echo "Starting sample: ${SAMPLE}" >&2
 echo "Threads: ${THREADS}" >&2
 echo "Run directory: ${RUN_DIR}" >&2
 
-apptainer exec --cleanenv --env THREADS="${THREADS}" --env TMPDIR="${TMPDIR}" --env SLURM_JOB_ID="${SLURM_JOB_ID}" --env SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK}" --bind /courses/BINF6610.202710,/scratch/${USER} "${SIF}" bash run_sample.sh "${SAMPLESHEET}" "${RUN_DIR}" "${SAMPLE}"
+apptainer exec --cleanenv --env THREADS="${THREADS}" --env TMPDIR="${TMPDIR}" --env SLURM_JOB_ID="${SLURM_JOB_ID}" --env SLURM_CPUS_PER_TASK="${SLURM_CPUS_PER_TASK}" --env REF="${REF}" --env REGION="${REGION}" --bind /courses/BINF6610.202710,/scratch/${USER} "${SIF}" bash run_sample.sh "${SAMPLESHEET}" "${RUN_DIR}" "${SAMPLE}"
 
 echo "Sample completed: ${SAMPLE}" >&2

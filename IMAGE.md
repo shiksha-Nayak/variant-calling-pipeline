@@ -1,6 +1,10 @@
 # Container Image
 
-## Image
+## The pushed image
+
+docker.io/nayakshi/variant-call@sha256:362030c575c53f64a9bef692c9ebe84ef6cc7d064d6513acabc8a68d30a37747
+
+## Image Details
 
 - Docker Hub image: `docker.io/nayakshi/variant-call:week3`
 - Image digest: `sha256:362030c575c53f64a9bef692c9ebe84ef6cc7d064d6513acabc8a68d30a37747`

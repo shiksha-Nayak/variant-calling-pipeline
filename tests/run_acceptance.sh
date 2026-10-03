@@ -1,541 +1,258 @@
 #!/usr/bin/env bash
 #-----------------------------------------------------------------------------
-# run_acceptance.sh — the tests that grade Assignment 1.
+# run_acceptance.sh — the tests that grade Assignment 3.
 #
 #   bash tests/run_acceptance.sh /path/to/your-repo
-#   bash tests/run_acceptance.sh /path/to/your-repo name    # only matching tests
+#   bash tests/run_acceptance.sh /path/to/your-repo versions     # one test
 #
-# This is the same file used for grading. Nothing is hidden, and you should run
-# it constantly rather than once at the end.
-#
-# EVERY CHECK HERE IS SOMETHING WEEK 1 TAUGHT. If a test surprises you, the
-# lecture covered it and the demo pipeline shows it — go back to that slide.
-#
-# NO SEQUENCING DATA IS REQUIRED. Every fixture is built here, in a temp
-# directory, out of a handful of synthetic reads, so the whole suite runs in
-# seconds and there is no excuse for discovering a failure at submission time.
-#
-# ONE TEST READS THE RESULT OF YOUR OWN FULL RUN. Run all ten stages on the
-# smoke dataset, copy the two files the brief names into `smoke-run/`, and the
-# smoke test scores your VCF against the variants planted in those reads. The
-# answer files it scores against are in `tests/smoke-truth/`.
-#
-# HOW YOUR PIPELINE IS INVOKED
-#
-#     ./run_pipeline.sh <samplesheet.csv> <outdir> validate
-#
-# Three positional arguments, exactly like the demo: the sheet, where to write,
-# and the last stage to run. `validate` must run stage 0 and stop. If your
-# driver cannot stop after a named stage it will fail most of these tests — and
-# it is the thing you will want most while developing, because it is how you
-# test stage 0 without waiting for an alignment.
-#
-# THE SAMPLESHEET THESE TESTS HAND YOU
-#
-# Six columns, no quoting, the same contract as the demo:
-#
-#     sample_id,condition,replicate,library_type,r1_fastq,r2_fastq
-#
-# WHAT THIS SUITE CANNOT SEE
-#
-# One test reads your code rather than running it — `set -euo pipefail` is
-# checked by looking for it, because proving it fires needs a real alignment to
-# kill. It says so in its own output. Passing it is necessary, not sufficient.
-#
-# Three tests pass when stage 0 raises no complaint, so they are gated behind a
-# positive control that proves your driver reads the samplesheet at all. See
-# `sheet_is_read` below for why.
+# RUNS ON YOUR LAPTOP. It builds nothing, submits nothing, and never touches the
+# cluster. Six tests read what you wrote; two read what the cluster produced and
+# you committed under cluster-run-container/ -- the versions your image reports, and the
+# manifest of the run that went through it.
 #-----------------------------------------------------------------------------
-set -uo pipefail        # NOT -e: a failing assertion must not stop the suite
+set -uo pipefail
 
 if (( BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 3) )); then
-    printf 'error: bash >= 4.3 required to run these tests, found %s\n' "${BASH_VERSION}" >&2
-    printf '       on macOS: brew install bash, then run with /opt/homebrew/bin/bash\n' >&2
+    printf 'error: bash >= 4.3 required, found %s\n' "${BASH_VERSION}" >&2
+    printf '       macOS ships 3.2.57 as /bin/bash. Use the one week 0 installed:\n' >&2
+    printf '       /opt/homebrew/bin/bash tests/run_acceptance.sh .\n' >&2
     exit 70
 fi
 
 REPO=${1:-.}
 FILTER=${2:-}
-REPO=$(cd -- "${REPO}" && pwd) || { printf 'error: no such directory: %s\n' "${1:-.}" >&2; exit 66; }
-HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+REPO=$(cd -- "${REPO}" && pwd) || { printf 'error: no such directory\n' >&2; exit 66; }
 
-WORK=$(mktemp -d "${TMPDIR:-/tmp}/binf6610-accept.XXXXXX") || exit 70
-trap 'rm -rf "${WORK}"' EXIT
-
-pass=0 fail=0
+pass=0 fail=0 points=0
 declare -a FAILURES=()
-
-if [[ -t 1 ]]; then
-    C_OK=$'\033[0;32m'; C_BAD=$'\033[0;31m'
-    C_DIM=$'\033[0;90m'; C_RST=$'\033[0m'
-else
-    C_OK='' C_BAD='' C_DIM='' C_RST=''
-fi
+if [[ -t 1 ]]; then C_OK=$'\033[0;32m'; C_BAD=$'\033[0;31m'; C_DIM=$'\033[0;90m'; C_RST=$'\033[0m'
+else C_OK='' C_BAD='' C_DIM='' C_RST=''; fi
 
 want() { [[ -z "${FILTER}" ]] || [[ "$1" == *"${FILTER}"* ]]; }
-
-ok()   { pass=$(( pass + 1 )); printf '  %sPASS%s  %s\n' "${C_OK}"  "${C_RST}" "$1"; }
+ok()   { pass=$(( pass + 1 )); points=$(( points + $2 ))
+         printf '  %sPASS%s  %2d/%-2d  %s\n' "${C_OK}" "${C_RST}" "$2" "$2" "$1"; }
+part() { pass=$(( pass + 1 )); points=$(( points + $2 ))
+         printf '  %sPART%s  %2d/%-2d  %s\n' "${C_OK}" "${C_RST}" "$2" "$3" "$1"
+         [[ -n "${4:-}" ]] && printf '        %s%s%s\n' "${C_DIM}" "$4" "${C_RST}"; }
 no()   { fail=$(( fail + 1 )); FAILURES+=( "$1" )
-         printf '  %sFAIL%s  %s\n' "${C_BAD}" "${C_RST}" "$1"
-         [[ -n "${2:-}" ]] && printf '        %s%s%s\n' "${C_DIM}" "$2" "${C_RST}"; }
+         printf '  %sFAIL%s   0/%-2d  %s\n' "${C_BAD}" "${C_RST}" "$2" "$1"
+         [[ -n "${3:-}" ]] && printf '        %s%s%s\n' "${C_DIM}" "$3" "${C_RST}"; }
 note() { printf '        %s%s%s\n' "${C_DIM}" "$1" "${C_RST}"; }
 
-#-----------------------------------------------------------------------------
-# Fixtures. Four-line records, real gzip, deliberately tiny.
-#-----------------------------------------------------------------------------
-fq() {                       # fq <path> <n_records>
-    local path=$1 n=$2 i
-    { for (( i = 1; i <= n; i++ )); do
-          printf '@read%d/1\nACGTACGTACGTACGTACGT\n+\nIIIIIIIIIIIIIIIIIIII\n' "${i}"
-      done
-    } | gzip -c > "${path}"
-}
+C="${REPO}/containers"
+RECIPE=""
+for cand in "${C}/Dockerfile" "${C}"/*.def; do [[ -f "${cand}" ]] && { RECIPE="${cand}"; break; }; done
+RUN="${REPO}/cluster-run-container"   # this week's run; cluster-run/ keeps last week's
+SL="${REPO}/slurm"
 
-FQ="${WORK}/fastq"
-mkdir -p "${FQ}"
-for s in NA12878 NA12891 NA12892; do
-    fq "${FQ}/${s}_R1.fastq.gz" 4
-    fq "${FQ}/${s}_R2.fastq.gz" 4
-done
-fq "${FQ}/shortmate_R1.fastq.gz" 5
-fq "${FQ}/shortmate_R2.fastq.gz" 4          # one mate short
-fq "${FQ}/Donor 3-rep1_R1.fastq.gz" 4       # a space and a hyphen, on purpose
-fq "${FQ}/Donor 3-rep1_R2.fastq.gz" 4
+declare -A WANT=( [bwa]=0.7.19 [samtools]=1.24 [bcftools]=1.24 [gatk4]=4.6.2.0
+                  [fastqc]=0.12.1 [fastp]=1.3.7 [multiqc]=1.35 )
+declare -A REPORTED=( [bwa]=0.7.19-r1273 [samtools]=1.24 [bcftools]=1.24 [gatk]=4.6.2.0
+                      [fastqc]=0.12.1 [fastp]=1.3.7 [multiqc]=1.35 )
 
-# A real gzip stream with its tail cut off: `gzip -t` must reject it.
-# Cut to HALF the file's length, never to a fixed byte count: twenty identical
-# records compress to about 109 bytes, so any fixed cut longer than that copies
-# the whole file and leaves a fixture that is not broken at all. And check the
-# fixture before grading anyone with it — if it ever passes `gzip -t`, every
-# correct stage 0 would be marked wrong, so the harness stops instead.
-fq "${FQ}/whole.fastq.gz" 20
-head -c $(( $(wc -c < "${FQ}/whole.fastq.gz") / 2 )) "${FQ}/whole.fastq.gz" > "${FQ}/cut_R1.fastq.gz"
-if gzip -t "${FQ}/cut_R1.fastq.gz" 2>/dev/null; then
-    printf 'harness error: the truncated-gzip fixture is a valid gzip file, so it tests nothing.\n' >&2
-    exit 2
-fi
-cp "${FQ}/NA12891_R2.fastq.gz"            "${FQ}/cut_R2.fastq.gz"
+joined() { awk '{ line = $0; while (sub(/\\[[:space:]]*$/, "", line)) { getline nxt; line = line " " nxt }
+                  print line }' "$1" 2>/dev/null; }
 
-# The contract, and nothing else. Six columns, unquoted — the same sheet the
-# demo pipeline reads, so `while IFS=, read -r id cond rep lt r1 r2` works.
-HDR='sample_id,condition,replicate,library_type,r1_fastq,r2_fastq'
+printf '\n%sBINF6610 Assignment 3 — acceptance tests%s\n%srepo: %s%s\n\n' \
+    "${C_OK}" "${C_RST}" "${C_DIM}" "${REPO}" "${C_RST}"
 
-sheet() {                    # sheet <name> <rows...>  -> prints the path
-    local name=$1; shift
-    local p="${WORK}/${name}.csv"
-    printf '%s\n' "${HDR}" > "${p}"
-    printf '%s\n' "$@" >> "${p}"
-    printf '%s' "${p}"
-}
-
-row() {                      # row <id> <condition> <rep> <libtype> <r1> [r2]
-    printf '%s,%s,%s,%s,%s,%s' "$1" "$2" "$3" "$4" "$5" "${6:-}"
-}
-
-GOOD=$(sheet good \
-    "$(row NA12878 affected   1 paired "${FQ}/NA12878_R1.fastq.gz" "${FQ}/NA12878_R2.fastq.gz")" \
-    "$(row NA12891 unaffected 2 paired "${FQ}/NA12891_R1.fastq.gz" "${FQ}/NA12891_R2.fastq.gz")")
-
-DUP=$(sheet duplicate \
-    "$(row NA12878 affected   1 paired "${FQ}/NA12878_R1.fastq.gz" "${FQ}/NA12878_R2.fastq.gz")" \
-    "$(row NA12878 unaffected 2 paired "${FQ}/NA12891_R1.fastq.gz" "${FQ}/NA12891_R2.fastq.gz")")
-
-CUT=$(sheet cutgzip \
-    "$(row NA12878 affected   1 paired "${FQ}/NA12878_R1.fastq.gz" "${FQ}/NA12878_R2.fastq.gz")" \
-    "$(row NA12891 unaffected 2 paired "${FQ}/cut_R1.fastq.gz"     "${FQ}/cut_R2.fastq.gz")")
-
-WEIRD=$(sheet weirdname \
-    "$(row 'Donor 3-rep1' affected 1 paired "${FQ}/Donor 3-rep1_R1.fastq.gz" "${FQ}/Donor 3-rep1_R2.fastq.gz")" \
-    "$(row NA12891 unaffected 2 paired "${FQ}/NA12891_R1.fastq.gz" "${FQ}/NA12891_R2.fastq.gz")")
-
-# The single-end sample here is NOT one of the two that are single-end in the real
-# cohort. A pipeline that hard-codes which samples are single-end passes on the
-# real sheet and fails right here, which is the entire point of the test.
-SINGLE=$(sheet singleend \
-    "$(row NA12878 affected   1 single "${FQ}/NA12878_R1.fastq.gz" "")" \
-    "$(row NA12891 unaffected 2 paired "${FQ}/NA12891_R1.fastq.gz" "${FQ}/NA12891_R2.fastq.gz")")
-
-# Three different problems, in three different samples, all at once. A stage 0
-# that dies on the first one names only BADPATH.
-MANY=$(sheet manyproblems \
-    "$(row BADPATH  affected   1 paired "${FQ}/does_not_exist_R1.fastq.gz" "${FQ}/does_not_exist_R2.fastq.gz")" \
-    "$(row NOMATE   unaffected 2 paired "${FQ}/NA12891_R1.fastq.gz" "")" \
-    "$(row CUTGZIP  affected   3 paired "${FQ}/cut_R1.fastq.gz"     "${FQ}/cut_R2.fastq.gz")" \
-    "$(row NA12892  unaffected 4 paired "${FQ}/NA12892_R1.fastq.gz" "${FQ}/NA12892_R2.fastq.gz")")
-
-#-----------------------------------------------------------------------------
-# validate <sheet> <outdir> -> prints "<exit>|<combined output>"
-#-----------------------------------------------------------------------------
-# HOW YOUR DRIVER IS CALLED, and why there are two ways.
-#
-# The demo pipeline takes three positional arguments and the brief documents
-# that. One slide in the lecture writes the same thing as `--to validate`. Both
-# readings are defensible, so this harness does not pick a winner: it reads your
-# driver once and calls it the way you wrote it. Whichever you chose, every test
-# below runs against it.
-INVOKE=positional
-if grep -qE -- '--samplesheet|--outdir|--to[[:space:]]|--to=' "${REPO}/run_pipeline.sh" 2>/dev/null \
-   || grep -rqE -- '--samplesheet|--outdir' "${REPO}/lib" 2>/dev/null; then
-    INVOKE=flags
-fi
-
-run_validate() {
-    local sheet=$1 outdir=$2 out rc
-    if [[ "${INVOKE}" == flags ]]; then
-        out=$( cd "${REPO}" && bash ./run_pipeline.sh \
-                 --samplesheet "${sheet}" --outdir "${outdir}" --to validate 2>&1 )
+# --------------------------------------------------------------------- 1 (15)
+if want pinned; then
+    if [[ -z "${RECIPE}" ]]; then
+        no "every version is pinned" 15 "no containers/Dockerfile (or .def)"
     else
-        out=$( cd "${REPO}" && bash ./run_pipeline.sh "${sheet}" "${outdir}" validate 2>&1 )
-    fi
-    rc=$?
-    printf '%s|%s' "${rc}" "${out}"
-}
-
-# Stage 0 validates the REFERENCE as well as the samplesheet, and it is right to.
-# But a GRCh38 index is five gigabytes and an hour to build, so these tests must
-# not require one. A positive test therefore asserts that stage 0 raised no
-# complaint ABOUT THE SAMPLE — a reference that is not built yet is reported once,
-# on its own, rather than showing up as several mysterious failures.
-ref_complaint() {
-    [[ "$1" == *"index"* || "$1" == *"GTF"* || "$1" == *"reference"* \
-       || "$1" == *"genome"* || "$1" == *"FASTA"* || "$1" == *"fasta"* ]]
-}
-# sample_ok <output> <sample_id> -> 0 if nothing was said against that sample
-sample_ok() {
-    local out=$1 id=$2 line
-    while IFS= read -r line; do
-        [[ "${line}" == *"${id}"* ]] || continue
-        [[ "${line}" == *ERROR* || "${line}" == *error* ]] || continue
-        ref_complaint "${line}" && continue
-        return 1
-    done <<< "${out}"
-    return 0
-}
-
-# A POSITIVE CONTROL, because silence is not evidence.
-#
-# Stage 0's correct answer to a good sample is to say nothing about it. Several
-# tests therefore pass when the output holds no complaint naming the sample —
-# which is exactly what a driver that never opens the samplesheet also produces.
-# Measured 2026-09-07: a two-line `run_pipeline.sh` whose whole body was
-# `echo hello` scored 4 of 9 on the previous version of this suite, and three of
-# those four were these tests. That is a check reporting PASS while measuring
-# nothing, which is the failure this course exists to teach.
-#
-# The weakest fair control is the one used here: a pipeline that reads the sheet
-# must answer DIFFERENTLY when handed one that is not there. It asks for nothing
-# the brief does not already require.
-SHEET_IS_READ=-1
-sheet_is_read() {
-    if (( SHEET_IS_READ < 0 )); then
-        local with_sheet without_sheet
-        with_sheet=$(run_validate    "${GOOD}"                         "${WORK}/probe-with")
-        without_sheet=$(run_validate "${WORK}/no-such-samplesheet.csv" "${WORK}/probe-without")
-        if [[ "${with_sheet}" != "${without_sheet}" ]]; then
-            SHEET_IS_READ=1
-        else
-            SHEET_IS_READ=0
-        fi
-    fi
-    (( SHEET_IS_READ == 1 ))
-}
-NOT_READING='your driver answered a real samplesheet and a samplesheet that does not exist
-        identically, so nothing has shown that stage 0 reads the sheet. This test
-        checks how a sample is HANDLED, and it cannot mean anything until something
-        handles it. Build stage 0 first.'
-
-# Every shell script in the repo, comments stripped, for the two tests that read
-# code. Layout-agnostic on purpose: the brief lets you start as one file.
-shell_files() {
-    ( cd "${REPO}" && find . -name '*.sh' -not -path './.git/*' -not -path './tests/*' | sort )
-}
-uncommented() {   # uncommented <file> -> the file with # comments removed
-    sed 's/[[:space:]]*#.*$//' "${REPO}/$1"
-}
-
-printf '\n%sBINF6610 Assignment 1 — acceptance tests%s\n' "${C_DIM}" "${C_RST}"
-printf '%srepo: %s%s\n' "${C_DIM}" "${REPO}" "${C_RST}"
-printf '%sdriver called as: %s%s\n\n' "${C_DIM}" \
-       "$( [[ "${INVOKE}" == flags ]] && echo './run_pipeline.sh --samplesheet S --outdir D --to validate' \
-                                      || echo './run_pipeline.sh S D validate' )" "${C_RST}"
-
-[[ -f "${REPO}/run_pipeline.sh" ]] || {
-    printf '  %sFAIL%s  run_pipeline.sh not found in %s\n' "${C_BAD}" "${C_RST}" "${REPO}"
-    printf '\n  Nothing else can run without it.\n\n'
-    exit 1
-}
-
-#-- 1 · 20 marks -------------------------------------------------------------
-# Stage 0 reports every problem it finds, together.
-if want everything; then
-    r=$(run_validate "${MANY}" "${WORK}/out-many"); rc=${r%%|*}; out=${r#*|}
-    missed=()
-    for id in BADPATH NOMATE CUTGZIP; do
-        [[ "${out}" == *"${id}"* ]] || missed+=( "${id}" )
-    done
-    if (( rc == 0 )); then
-        no "stage 0 reports every problem together" \
-           "four samples, three of them broken, and stage 0 exited 0. It has to fail."
-    elif (( ${#missed[@]} > 0 )); then
-        no "stage 0 reports every problem together" \
-           "exited ${rc}, but never named: ${missed[*]}. A stage 0 that dies on the first
-        problem costs one run per typo. Collect them, then exit once."
-    else
-        ok "stage 0 reports every problem together (exit ${rc})"
-        note 'a missing file, a paired row with no R2, and a corrupt gzip — all three named.'
-    fi
-fi
-
-#-- 2 · 10 marks -------------------------------------------------------------
-# A sample name with a space in it.
-if want name; then
-    if ! sheet_is_read; then
-        no "survives a sample named 'Donor 3-rep1'" "${NOT_READING}"
-    else
-        r=$(run_validate "${WEIRD}" "${WORK}/out-weird"); out=${r#*|}
-        if sample_ok "${out}" 'Donor 3-rep1'; then
-            ok "survives a sample named 'Donor 3-rep1'"
-        else
-            no "survives a sample named 'Donor 3-rep1'" \
-               "an unquoted \$id or \$r1 split on the space. Every expansion needs quotes:
-        \"\$r1\", not \$r1."
-        fi
-    fi
-fi
-
-#-- 3 · 10 marks -------------------------------------------------------------
-# A corrupt gzip stream.
-if want truncated; then
-    r=$(run_validate "${CUT}" "${WORK}/out-cut"); rc=${r%%|*}; out=${r#*|}
-    if (( rc != 0 )) && [[ "${out}" == *NA12891* ]]; then
-        ok "catches a truncated .fastq.gz in stage 0"
-    elif (( rc != 0 )); then
-        no "catches a truncated .fastq.gz in stage 0" \
-           "it failed, but never named NA12891 — say which sample, or nobody can fix it."
-    else
-        no "catches a truncated .fastq.gz in stage 0" \
-           "NA12891's R1 is a gzip stream with its tail cut off and stage 0 accepted it.
-        \`gzip -t\` is the check; the file opens fine and ends in the middle."
-    fi
-fi
-
-#-- 4 · 10 marks -------------------------------------------------------------
-# The same sample_id twice.
-if want duplicate; then
-    r=$(run_validate "${DUP}" "${WORK}/out-dup"); rc=${r%%|*}; out=${r#*|}
-    if (( rc != 0 )) && [[ "${out}" == *NA12878* ]]; then
-        ok "rejects a duplicate sample_id"
-    elif (( rc != 0 )); then
-        no "rejects a duplicate sample_id" \
-           "it failed, but never named NA12878 — an error that does not say which row is
-        wrong is not actionable. Partial credit."
-    else
-        no "rejects a duplicate sample_id" \
-           "NA12878 appears on two rows. Whichever runs second overwrites the first, and
-        the cohort is quietly one sample smaller. The demo does it with
-        \`awk -F, 'NR>1 { print \$1 }' \"\$SHEET\" | sort | uniq -d\`."
-    fi
-fi
-
-#-- 5 · 5 marks --------------------------------------------------------------
-# Single-end decided by the column, not by the name.
-if want single; then
-    if ! sheet_is_read; then
-        no "single-end read from library_type, not from the name" "${NOT_READING}"
-    else
-        r=$(run_validate "${SINGLE}" "${WORK}/out-single"); out=${r#*|}
-        if sample_ok "${out}" NA12878; then
-            ok "single-end read from library_type, not from the name"
-        else
-            no "single-end read from library_type, not from the name" \
-               "NA12878 is single-end HERE and paired in the real cohort. If your code
-        decides from the sample's name it passes on the real sheet and fails on
-        this one. Branch on \$lt."
-        fi
-    fi
-fi
-
-#-- 6 · 5 marks --------------------------------------------------------------
-# set -euo pipefail, read from the code.
-if want strict; then
-    without=()
-    while IFS= read -r f; do
-        [[ -n "${f}" ]] || continue
-        body=$(uncommented "${f}")
-        has_e=0 has_u=0 has_p=0
-        [[ "${body}" =~ set\ -[a-z]*e || "${body}" == *"set -o errexit"*  ]] && has_e=1
-        [[ "${body}" =~ set\ -[a-z]*u || "${body}" == *"set -o nounset"*  ]] && has_u=1
-        [[ "${body}" == *"pipefail"* ]]                                      && has_p=1
-        (( has_e && has_u && has_p )) || without+=( "${f}" )
-    done < <(shell_files)
-
-    if (( ${#without[@]} == 0 )); then
-        ok "set -euo pipefail in every script"
-        note 'read from your code, not proven by killing a run. Necessary, not sufficient.'
-    else
-        no "set -euo pipefail in every script" \
-           "missing -e, -u or pipefail in: ${without[*]}
-        pipefail is the one that matters most here: without it a dead gzip feeding a
-        happy wc gives you a count of 0 and an exit status of 0."
-    fi
-fi
-
-#-- 7 · 5 marks --------------------------------------------------------------
-# Progress to stderr, stdout left clean.
-if want stderr; then
-    if ! sheet_is_read; then
-        no "progress messages go to stderr" "${NOT_READING}"
-    else
-        if [[ "${INVOKE}" == flags ]]; then
-            sout=$( cd "${REPO}" && bash ./run_pipeline.sh --samplesheet "${GOOD}" \
-                      --outdir "${WORK}/out-fd"  --to validate 2>/dev/null )
-            serr=$( cd "${REPO}" && bash ./run_pipeline.sh --samplesheet "${GOOD}" \
-                      --outdir "${WORK}/out-fd2" --to validate 2>&1 >/dev/null )
-        else
-            sout=$( cd "${REPO}" && bash ./run_pipeline.sh "${GOOD}" "${WORK}/out-fd"  validate 2>/dev/null )
-            serr=$( cd "${REPO}" && bash ./run_pipeline.sh "${GOOD}" "${WORK}/out-fd2" validate 2>&1 >/dev/null )
-        fi
-        if [[ -z "${serr//[[:space:]]/}" ]]; then
-            no "progress messages go to stderr" \
-               "stage 0 said nothing at all on stderr. It should report what it checked."
-        elif [[ -n "${sout//[[:space:]]/}" ]]; then
-            no "progress messages go to stderr" \
-               "stdout carried: $(printf '%s' "${sout}" | head -1)
-        Channel 1 is for data a later stage will read. Messages go to channel 2:
-        \`echo \"...\" >&2\`. A VCF with a log line in it is not a VCF."
-        else
-            ok "progress messages go to stderr, stdout stays clean"
-        fi
-    fi
-fi
-
-#-- 8 · 5 marks --------------------------------------------------------------
-# No sample named in the code.
-if want samplesheet; then
-    named=()
-    while IFS= read -r f; do
-        [[ -n "${f}" ]] || continue
-        body=$(uncommented "${f}")
-        for id in NA12878 NA12891 NA12892 NA07357 NA12003 NA10851 NA12813 NA12873; do
-            [[ "${body}" == *"${id}"* ]] && { named+=( "${f}:${id}" ); break; }
+        problems=()
+        base=$(grep -iE '^[[:space:]]*(FROM|From:)[[:space:]]' "${RECIPE}" | tail -1 \
+               | sed -E 's/^[^[:space:]]+[[:space:]]+//; s/[[:space:]]+AS[[:space:]].*$//I')
+        if [[ -z "${base}" ]];           then problems+=( "no FROM line" )
+        elif [[ "${base}" == *:latest ]]; then problems+=( "the base image is ':latest'" )
+        elif [[ "${base}" != *:* && "${base}" != *@sha256:* ]]; then problems+=( "the base image '${base}' has no tag" ); fi
+        PINFILES=( "${RECIPE}" )
+        for y in "${C}"/*.yml "${C}"/*.yaml; do [[ -f "${y}" ]] && PINFILES+=( "${y}" ); done
+        for t in "${!WANT[@]}"; do
+            grep -qE "(^|[[:space:]])${t}=[0-9]" "${PINFILES[@]}" || problems+=( "${t} is not pinned" )
         done
-    done < <(shell_files)
-
-    if (( ${#named[@]} == 0 )); then
-        ok "no sample is named in the code"
-    else
-        no "no sample is named in the code" \
-           "found: ${named[*]}
-        The samplesheet is the only input. Adding a sample or changing a condition
-        must need no change to the code."
+        while IFS= read -r l; do
+            [[ "${l}" == *=* ]] || problems+=( "unpinned apt-get install: $(cut -c1-48 <<< "${l}")" )
+        done < <(grep -hE 'apt-get[[:space:]]+install' "${RECIPE}")
+        if   (( ${#problems[@]} == 0 )); then ok "every version is pinned" 15
+        elif (( ${#problems[@]} == 1 )) && [[ "${problems[0]}" == *latest* ]]; then part "every version is pinned" 5 15 "${problems[0]}"
+        elif (( ${#problems[@]} == 1 )); then part "every version is pinned" 10 15 "${problems[0]}"
+        else no "every version is pinned" 15 "${problems[0]}"; for ((i=1;i<${#problems[@]};i++)); do note "${problems[i]}"; done; fi
     fi
 fi
 
-#-- 9 · 20 marks -------------------------------------------------------------
-# The whole pipeline, run on the smoke dataset, found the variants planted in it.
-#
-# Every other test here runs stage 0 or reads your code. This one reads the
-# result of your own run of all ten stages: your stage-7 VCF, scored against
-# the answer files wgsim wrote when it planted the variants. A pipeline that
-# stops early has no VCF to hand in, and one that mishandles the single-end
-# sample (smoke_03) loses that sample's column.
-#
-# A planted SNV counts as found when that sample has a non-reference genotype
-# at that position, whatever the FILTER column says. Measured with the course's
-# reference solution on the instructor's 8 GB laptop: 850/850 (100 %),
-# 828/829 (99.9 %) and 798/866 (92.1 %) for the single-end sample, whose reads
-# are about 9x deep. The bar is 80 % per sample.
-SMOKE_MIN_PCT=80
-smoke_calls() {              # smoke_calls <vcf> -> "sample<TAB>pos" per non-reference genotype
-    local vcf=$1
-    { if [[ "${vcf}" == *.gz ]]; then gzip -dc "${vcf}"; else cat "${vcf}"; fi; } 2>/dev/null \
-    | awk -F'\t' '
-        /^##/     { next }
-        /^#CHROM/ { for (i = 10; i <= NF; i++) name[i] = $i; next }
-        {
-            n = split($9, fmt, ":"); g = 0
-            for (k = 1; k <= n; k++) if (fmt[k] == "GT") g = k
-            if (!g) next
-            for (i = 10; i <= NF; i++) {
-                split($i, f, ":")
-                if (f[g] ~ /[1-9]/) print name[i] "\t" $2
-            }
-        }'
-}
-if want smoke; then
-    SVCF=""
-    for cand in smoke-run/cohort.filtered.vcf.gz smoke-run/cohort.filtered.vcf; do
-        [[ -s "${REPO}/${cand}" ]] && { SVCF="${REPO}/${cand}"; break; }
-    done
-    SPROV=""
-    for cand in smoke-run/manifest.json smoke-run/run_info.tsv; do
-        [[ -s "${REPO}/${cand}" ]] && grep -q 'smoke' "${REPO}/${cand}" && { SPROV="${cand}"; break; }
-    done
-
-    if [[ -z "${SVCF}" ]]; then
-        no "the whole pipeline ran on the smoke dataset" \
-           "no smoke-run/cohort.filtered.vcf.gz in your repository. Run all ten stages on the
-        smoke dataset, copy your stage-7 VCF and your stage-9 manifest into smoke-run/,
-        and commit them. The brief shows the three commands."
+# --------------------------------------------------------------------- 2 (20)
+if want versions; then
+    VI="${RUN}/versions-image.txt"; VC="${RUN}/versions-conda.txt"
+    if [[ ! -s "${VI}" && -s "${REPO}/cluster-run/versions-image.txt" ]]; then
+        VI="${REPO}/cluster-run/versions-image.txt"; VC="${REPO}/cluster-run/versions-conda.txt"
+        note "versions-image.txt is in cluster-run/; step 8 puts it in cluster-run-container/"
+    fi
+    if [[ ! -s "${VI}" ]]; then
+        no "the versions inside your image match the course environment" 20 \
+           "no cluster-run-container/versions-image.txt — run tests/print_versions.sh inside your image (step 8)"
     else
-        calls=$(smoke_calls "${SVCF}")
-        header=$( { if [[ "${SVCF}" == *.gz ]]; then gzip -dc "${SVCF}"; else cat "${SVCF}"; fi; } 2>/dev/null \
-                  | awk -F'\t' '/^#CHROM/ { for (i = 10; i <= NF; i++) print $i; exit }')
-        problems=() found=()
-        for s in smoke_01 smoke_02 smoke_03; do
-            truth="${HERE}/smoke-truth/${s}.truth.txt"
-            if ! grep -qx "${s}" <<< "${header}"; then
-                problems+=( "the VCF has no column for ${s}" )
-                continue
-            fi
-            total=$(awk -F'\t' '$3 != "-" && $4 != "-"' "${truth}" | wc -l | tr -d ' ')
-            hits=$(awk -F'\t' -v s="${s}" 'NR == FNR { if ($1 == s) seen[$2] = 1; next }
-                                           $3 != "-" && $4 != "-" && ($2 in seen)' \
-                       <(printf '%s\n' "${calls}") "${truth}" | wc -l | tr -d ' ')
-            pct=$(( total > 0 ? 100 * hits / total : 0 ))
-            found+=( "${s} ${hits}/${total} (${pct} %)" )
-            (( pct >= SMOKE_MIN_PCT )) || problems+=( "${s} found ${hits} of ${total} planted SNVs (${pct} %)" )
+        good=0; bad=()
+        for t in "${!REPORTED[@]}"; do
+            got=$(awk -v t="${t}" '$1 == t { print $2 }' "${VI}")
+            if [[ "${got}" == "${REPORTED[$t]}" ]]; then good=$(( good + 1 ))
+            else bad+=( "${t}: image reports '${got:-nothing}', the environment has ${REPORTED[$t]}" ); fi
         done
-        [[ -n "${SPROV}" ]] || problems+=( "no smoke-run/manifest.json that names the smoke reference" )
-
-        if (( ${#problems[@]} == 0 )); then
-            ok "the whole pipeline ran on the smoke dataset"
-            note "planted SNVs found: ${found[*]}"
-        else
-            no "the whole pipeline ran on the smoke dataset" \
-               "a VCF is there, so the run finished: partial credit. Still wrong: $(IFS=';'; printf '%s' "${problems[*]}").
-        The bar is ${SMOKE_MIN_PCT} % of each sample's planted SNVs. A missing column usually means the
-        read group's SM is not the sample_id, or the single-end sample never reached the VCF."
+        if   (( good == 7 )); then ok "the versions inside your image match the course environment" 20
+        elif (( good >= 5 )); then part "the versions inside your image match the course environment" 10 20 "${bad[0]}"
+             for ((i=1;i<${#bad[@]};i++)); do note "${bad[i]}"; done
+        else no "the versions inside your image match the course environment" 20 "${good} of 7 match"
+             for b in "${bad[@]}"; do note "${b}"; done; fi
+        if [[ -s "${VC}" ]] && ! diff -q "${VC}" "${VI}" >/dev/null; then
+            note "versions-conda.txt and versions-image.txt differ — the diff is the finding:"
+            diff "${VC}" "${VI}" | grep -E '^[<>]' | sed 's/^/          /'
         fi
     fi
 fi
 
-#-- 10 · 10 marks, read by a person ------------------------------------------
-if want troubleshooting; then
-    tfile=""
-    for cand in TROUBLESHOOTING.md troubleshooting.md docs/TROUBLESHOOTING.md; do
-        [[ -f "${REPO}/${cand}" ]] && { tfile="${cand}"; break; }
-    done
-    if [[ -z "${tfile}" ]]; then
-        no "TROUBLESHOOTING.md is present" \
-           "half a page: what broke, how you found it, the fix. It is worth 10 marks and
-        it is the part no automated test can grade."
-    elif (( $(wc -c < "${REPO}/${tfile}") < 200 )); then
-        no "TROUBLESHOOTING.md is present" \
-           "${tfile} is under 200 characters. Marks come from reading it, not from its
-        existence — say what broke, how you found it, and what the fix was."
+# --------------------------------------------------------------------- 3 (5)
+if want job; then
+    J=""
+    for cand in "${SL}/pull.sbatch" "${C}"/build*.sbatch "${SL}"/build*.sbatch; do [[ -f "${cand}" ]] && { J="${cand}"; break; }; done
+    if [[ -z "${J}" ]]; then
+        no "the image is fetched by a job" 5 "no slurm/pull.sbatch (or a build job for the .def route)"
+    elif ! grep -qE '^#SBATCH' "${J}"; then
+        no "the image is fetched by a job" 5 "$(basename "${J}") has no #SBATCH lines, so it is not a job"
     else
-        ok "TROUBLESHOOTING.md is present (${tfile})"
-        note 'the marks for this one come from reading it, not from this check.'
+        cache=$(grep -hE 'APPTAINER_CACHEDIR=' "${J}" | head -1)
+        if [[ -z "${cache}" || "${cache}" == *'$HOME'* || "${cache}" == *'~/'* || "${cache}" == */home/* ]]; then
+            no "the image is fetched by a job" 5 "APPTAINER_CACHEDIR is not moved out of your home directory"
+        else ok "the image is fetched by a job" 5; fi
     fi
 fi
 
-#-----------------------------------------------------------------------------
-printf '\n  %d passed, %d failed\n' "${pass}" "${fail}"
+# --------------------------------------------------------------------- 4 (15)
+check_script() {   # prints: ok | noexec | noclean | nobind | conda
+    local f=$1 entry=$2 l
+    [[ -f "${f}" ]] || { echo missing; return; }
+    grep -qE '^[^#]*(conda|source)[[:space:]]+activate' "${f}" && { echo conda; return; }
+    l=$(joined "${f}" | grep -E 'apptainer[[:space:]]+exec' | grep -F "${entry}" | head -1)
+    [[ -z "${l}" ]] && { echo noexec; return; }
+    [[ "${l}" == *--cleanenv* ]] || { echo noclean; return; }
+    [[ "${l}" == *--bind* || "${l}" == *' -B '* ]] || { echo nobind; return; }
+    echo ok
+}
+if want scripts; then
+    s1=$(check_script "${SL}/01_persample.sbatch" run_sample.sh)
+    s2=$(check_script "${SL}/02_cohort.sbatch"    run_pipeline.sh)
+    why() { case $1 in missing) echo "the file is missing";; conda) echo "it still activates conda";;
+                       noexec) echo "its pipeline line is not run through apptainer exec";;
+                       noclean) echo "no --cleanenv";; nobind) echo "no --bind";; esac; }
+    if [[ "${s1}" == ok && "${s2}" == ok ]]; then ok "both job scripts run the pipeline through the image" 15
+    elif [[ "${s1}" == ok || "${s2}" == ok ]] || [[ "${s1}" == no* && "${s2}" == no* && "${s1}" != noexec && "${s2}" != noexec ]]; then
+        part "both job scripts run the pipeline through the image" 10 15 \
+             "01_persample: ${s1/ok/done}$( [[ ${s1} != ok ]] && echo " — $(why ${s1})")   02_cohort: ${s2/ok/done}$( [[ ${s2} != ok ]] && echo " — $(why ${s2})")"
+    else
+        no "both job scripts run the pipeline through the image" 15 \
+           "01_persample: $(why ${s1})   02_cohort: $(why ${s2})"
+    fi
+fi
+
+# --------------------------------------------------------------------- 5 (10)
+if want variables; then
+    set_vars=$(grep -hoE '^[[:space:]]*export[[:space:]]+[A-Z_][A-Z0-9_]*' "${SL}"/0*.sbatch 2>/dev/null \
+               | awk '{ print $2 }' | sort -u)
+    missing=(); have_threads=0
+    for v in ${set_vars}; do
+        grep -rqE "\\\$\{?${v}\b" "${REPO}/lib" "${REPO}/stages" "${REPO}"/run_*.sh 2>/dev/null || continue
+        if grep -qE -e "APPTAINERENV_${v}=|--env[= ]+[\"']?([A-Za-z_][A-Za-z0-9_]*=[^,[:space:]]*,)*${v}=" \
+                "${SL}"/0*.sbatch 2>/dev/null; then
+            [[ "${v}" == THREADS ]] && have_threads=1
+        else missing+=( "${v}" ); fi
+    done
+    if   (( ${#missing[@]} == 0 && have_threads )); then ok "the job's variables reach the container" 10
+    elif (( have_threads )); then part "the job's variables reach the container" 5 10 \
+         "your job scripts set these and your pipeline reads them, but they are not carried in: ${missing[*]}"
+    else others=(); for v in "${missing[@]}"; do [[ "${v}" == THREADS ]] || others+=( "${v}" ); done
+         no "the job's variables reach the container" 10 \
+         "THREADS is not carried in with --env THREADS=… — the pipeline then uses its own default${others:+; also missing: ${others[*]}}"; fi
+fi
+
+# --------------------------------------------------------------------- 6 (15)
+if want cohort; then
+    vcf=$(ls "${RUN}"/*.vcf.gz 2>/dev/null | head -1)
+    man="${RUN}/manifest.json"
+    container_of() { grep -oE '"container"[[:space:]]*:[[:space:]]*"[^"]*"' "$1" 2>/dev/null \
+                         | sed -E 's/.*:[[:space:]]*"//; s/"$//'; }
+    if [[ -z "${vcf}" || ! -s "${man}" ]]; then
+        hint=""; [[ -s "${REPO}/cluster-run/manifest.json" && "$(container_of "${REPO}/cluster-run/manifest.json" | head -1)" == *.sif ]] \
+            && hint=" — this week's run looks like it went into cluster-run/, which keeps last week's"
+        no "the cohort ran through the image" 15 "cluster-run-container/ needs the cohort VCF and manifest.json from the containerised run (step 7)${hint}"
+    else
+        cont=$(container_of "${man}" | head -1)
+        RS="${RUN}/records-sha256.txt"
+        sums=$(grep -oE '\b[0-9a-f]{64}\b' "${RS}" 2>/dev/null | head -2)
+        nsum=$(grep -c . <<< "${sums}")
+        words=$(grep -vE '[0-9a-f]{64}' "${RS}" 2>/dev/null | grep -oE '[A-Za-z]+' | wc -l | tr -d ' ')
+        if [[ "${cont}" != *.sif ]]; then
+            part "the cohort ran through the image" 5 15 \
+                 "the manifest's container field is '${cont:-absent}' — stage 9 should call write_manifest.sh (step 6), which records it, and the cohort must run through the image (step 7)"
+        elif (( nsum < 2 )); then
+            part "the cohort ran through the image" 10 15 \
+                 "cluster-run-container/records-sha256.txt needs both record checksums, last week's and this week's (step 9)"
+        elif [[ "$(sed -n 1p <<< "${sums}")" == "$(sed -n 2p <<< "${sums}")" ]]; then
+            ok "the cohort ran through the image" 15; note "container: ${cont}"; note "the records match last week's"
+        elif (( words >= 5 )); then
+            ok "the cohort ran through the image" 15; note "container: ${cont}"; note "the records differ from last week's, and records-sha256.txt says why"
+        else
+            part "the cohort ran through the image" 10 15 \
+                 "the two record checksums differ; add one sentence to records-sha256.txt saying why (step 9)"
+        fi
+    fi
+fi
+
+# --------------------------------------------------------------------- 7 (10)
+if want IMAGE; then
+    IM="${REPO}/IMAGE.md"
+    if [[ ! -s "${IM}" ]]; then no "IMAGE.md" 10 "missing or empty"
+    else
+        dig=0; base=0; vers=0
+        base_repo=$(grep -iE '^[[:space:]]*(FROM|From:)[[:space:]]' "${RECIPE:-/dev/null}" 2>/dev/null | tail -1 \
+                    | sed -E 's/^[^[:space:]]+[[:space:]]+//; s/[[:space:]]+AS[[:space:]].*$//I; s/@.*$//; s/:[^/]*$//' \
+                    | sed -E 's#^docker\.io/##; s#^library/##')
+        while IFS= read -r ref; do
+            r=${ref%%@*}; r=${r#docker.io/}; r=${r#library/}
+            [[ -n "${base_repo}" && "${r}" == "${base_repo}" ]] && continue
+            dig=1; break
+        done < <(grep -oE '[A-Za-z0-9._/:<>-]+@sha256:[0-9a-f]{64}' "${IM}")
+        (( dig == 0 )) && grep -qiE '\.def' "${IM}" && grep -qE '\b[0-9]{7,9}\b' "${IM}" && dig=1
+        grep -qiE 'FROM |base image|micromamba|ubuntu|debian' "${IM}" && base=1
+        n=0; for t in "${!WANT[@]}"; do grep -qiE "${t%4}" "${IM}" && n=$(( n + 1 )); done; (( n >= 7 )) && vers=1
+        if   (( dig && base && vers )); then ok "IMAGE.md" 10
+        else m=""; (( base )) || m+="base image; "; (( vers )) || m+="the seven versions; "
+             (( dig )) || m+="the pushed image's @sha256: digest; "
+             if (( dig + base + vers >= 2 )); then part "IMAGE.md" 5 10 "missing: ${m%; }"
+             else no "IMAGE.md" 10 "missing: ${m%; }"; fi; fi
+    fi
+fi
+
+# --------------------------------------------------------------------- 8 (10)
+if want TROUBLE; then
+    TS="${REPO}/TROUBLESHOOTING.md"
+    if [[ ! -s "${TS}" ]]; then no "TROUBLESHOOTING.md" 10 "missing or empty"
+    else
+        n=0
+        grep -qiE -- '--pull|no-cache|dpkg'                              "${TS}" && n=$(( n + 1 ))
+        grep -qiE -- 'bind|No such file|Skipping'                        "${TS}" && n=$(( n + 1 ))
+        grep -qiE -- 'native-pair-hmm-threads|Requested threads|--env[= ]+THREADS|APPTAINERENV_THREADS' "${TS}" && n=$(( n + 1 ))
+        grep -qiE -- 'arm64|architecture'                                "${TS}" && n=$(( n + 1 ))
+        if   (( n == 4 )); then ok "TROUBLESHOOTING.md" 10
+        elif (( n >= 2 )); then part "TROUBLESHOOTING.md" 5 10 "${n} of the four failures are described"
+        else no "TROUBLESHOOTING.md" 10 "${n} of the four failures are described"; fi
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+printf '\n  %d passed, %d failed — %d/100 points\n' "${pass}" "${fail}" "${points}"
 if (( fail )); then
-    printf '\n  failing:\n'
+    printf '\n  %sstill to do:%s\n' "${C_BAD}" "${C_RST}"
     for f in "${FAILURES[@]}"; do printf '    - %s\n' "${f}"; done
-    printf '\n'
-    exit 1
+    printf '\n'; exit 1
 fi
 printf '\n'

@@ -1,0 +1,4 @@
+b15ce9ccdae304dd39a0f60bd4a711ac551bd1fc4e9728b10ff4a2b2d2c0604a  -
+e591e2affb094ce15cdda47a5ce9a7a4e5b345de594176e6489fe8951a7bfe92  -
+
+# Checksums differ between Week 2 (conda) and Week 3 (container) due to different execution environments and potential variations in tool behavior across runs.

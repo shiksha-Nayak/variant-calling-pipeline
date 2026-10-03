@@ -1,7 +1,7 @@
-bwa=
-samtools=samtools 1.24
-bcftools=bcftools 1.24
-gatk4=Using GATK jar /opt/conda/share/gatk4-4.6.2.0-1/gatk-package-4.6.2.0-local.jar
-fastqc=FastQC v0.12.1
-fastp=fastp 1.3.7
-multiqc=multiqc, version 1.35
+bwa       0.7.19-r1273
+samtools  1.24
+bcftools  1.24
+gatk      4.6.2.0
+fastqc    0.12.1
+fastp     1.3.7
+multiqc   1.35
