@@ -13,3 +13,9 @@ smoke-run-final/
 logs/
 
 Submit/
+
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+nf-head-*.out
