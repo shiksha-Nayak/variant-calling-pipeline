@@ -1,0 +1,4 @@
+Week 3 filtered VCF records: bc7c8da59c4a4cec52d41676bdee72e369bb68796822b578ad5b05557c2e3b21
+Week 4 filtered VCF records: 67f44e2013d07191c9fc5e799a98c715815e1baea83e2641cb90ec1fd554fe87
+
+The record checksums differ between the Week 3 container workflow and the Week 4 Nextflow workflow. Both VCFs contain the same eight sample names, but the checksum difference alone does not identify its cause.
