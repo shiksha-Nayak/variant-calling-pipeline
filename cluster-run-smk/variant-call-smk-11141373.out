@@ -1,0 +1,73 @@
+Using profile profiles/explorer for setting default command line arguments.
+Config file config.yaml is extended by additional config specified via the command line.
+
+SNAKEMAKE
+=========
+  Date: 2026-10-16 14:26:46
+  Workflow ID: 7bc77641-4fa5-41bc-bd49-f9719ad6302f
+  Platform: Linux-5.14.0-362.13.1.el9_3.x86_64-x86_64-with-glibc2.34
+  Host: c3014
+  User: nayak.shi
+  Snakemake version: 9.27.0
+  Python version: 3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]
+  Command: /courses/BINF6610.202710/shared/env/binf6610-workflows/bin/snakemake --profile profiles/explorer --config samplesheet=/courses/BINF6610.202710/data/samplesheet-variant8.csv ref=/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa region=chr20:1-10000000 outdir=results-smk
+  Snakefile: /home/nayak.shi/variant-calling-pipeline/Snakefile
+  Base directory: /home/nayak.shi/variant-calling-pipeline
+  Run directory: /home/nayak.shi/variant-calling-pipeline
+  Working directory: /home/nayak.shi/variant-calling-pipeline
+  Config file(s): [PosixPath('/home/nayak.shi/variant-calling-pipeline/profiles/explorer/platform.yaml'), 'config.yaml']
+  Config MD5: 65e87681be929b0d4dc48ce3cc4721c8
+
+Building DAG of jobs...
+You are running snakemake in a SLURM job context. This is not recommended, as it may lead to unexpected behavior. If possible, please run Snakemake directly on the login node.
+SLURM run ID: c00dd1b8-fcc0-4a91-88ee-eb98aa63e400
+MinJobAge 300s (>= 120s). 'squeue' should work reliably for status queries.
+Using shell: /usr/bin/bash
+Provided remote nodes: 20
+Job stats:
+job                count
+---------------  -------
+validate               1
+fastp_paired           6
+fastp_single           2
+bwa_mem                8
+markduplicates         8
+haplotypecaller        8
+multiqc                1
+joint_genotype         1
+filter                 1
+publish                1
+all                    1
+total                 38
+
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Oct 16 14:26:47 2026]
+rule validate:
+    input: /courses/BINF6610.202710/data/samplesheet-variant8.csv, /courses/BINF6610.202710/data/fastq-variant/NA12878_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12878_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12891_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12891_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12892_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA07357_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA07357_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12003_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA10851_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA10851_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12813_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12813_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12873_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12873_R2.fastq.gz, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.amb, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.ann, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.bwt, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.pac, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.sa, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.dict
+    output: work/validate/samplesheet.csv
+    log: logs/validate.log
+    jobid: 7
+    reason: Missing output files: work/validate/samplesheet.csv
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=19601, disk=19.6 GB, disk_mib=18693, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: (/home/nayak.shi/variant-calling-pipeline/bin/validate_samplesheet.sh /courses/BINF6610.202710/data/samplesheet-variant8.csv /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa && cp /courses/BINF6610.202710/data/samplesheet-variant8.csv work/validate/samplesheet.csv) 2> logs/validate.log
+Job 7 has been submitted with SLURM jobid 11141382 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_validate/11141382.log).
+[Fri Oct 16 14:27:29 2026]
+Error in rule validate:
+    message: SLURM-job '11141382' failed, SLURM status is: 'FAILED'. Reason: Unknown.For further error details see the cluster/cloud log and the log files of the involved rule(s).
+    jobid: 7
+    input: /courses/BINF6610.202710/data/samplesheet-variant8.csv, /courses/BINF6610.202710/data/fastq-variant/NA12878_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12878_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12891_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12891_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12892_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA07357_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA07357_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12003_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA10851_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA10851_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12813_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12813_R2.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12873_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12873_R2.fastq.gz, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.amb, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.ann, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.bwt, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.pac, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa.sa, /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.dict
+    output: work/validate/samplesheet.csv
+    log: logs/validate.log, /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_validate/11141382.log (check log file(s) for error details)
+    shell:
+        (/home/nayak.shi/variant-calling-pipeline/bin/validate_samplesheet.sh /courses/BINF6610.202710/data/samplesheet-variant8.csv /courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa && cp /courses/BINF6610.202710/data/samplesheet-variant8.csv work/validate/samplesheet.csv) 2> logs/validate.log
+        (command exited with non-zero exit code)
+    external_jobid: 11141382
+Shutting down, this might take some time.
+Cleaning up SLURM log files older than 10 day(s).
+Exiting because a job execution failed. Look above for error messages
+Complete log(s): /home/nayak.shi/variant-calling-pipeline/.snakemake/log/2026-10-16T142646.608011.snakemake.log
+Elapsed time: 0:01:33.097859
+WorkflowError:
+At least one job did not complete successfully.
