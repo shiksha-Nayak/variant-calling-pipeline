@@ -66,8 +66,6 @@ rule validate:
         "work/validate/samplesheet.csv"
     log:
         "logs/validate.log"
-    container:
-        IMAGES["tools"]
     shell:
         "({BIN}/validate_samplesheet.sh {input.sheet} {input.ref} && cp {input.sheet} {output}) 2> {log}"
 
@@ -88,7 +86,8 @@ rule fastqc:
         """
         mkdir -p work/fastqc/raw_{wildcards.sample}
         fastqc --threads {threads}             --outdir work/fastqc/raw_{wildcards.sample}             {input.reads} 2> {log}
-        python3 -c 'import glob,shutil,sys; d=sys.argv[1]; h=sorted(glob.glob(d+"/*_fastqc.html")); z=sorted(glob.glob(d+"/*_fastqc.zip")); assert h and z; shutil.copyfile(h[0],sys.argv[2]); shutil.copyfile(z[0],sys.argv[3])'             work/fastqc/raw_{wildcards.sample} {output.html} {output.zip}
+        cp "$(find work/fastqc/raw_{wildcards.sample} -name '*_fastqc.html' -print -quit)" {output.html}
+        cp "$(find work/fastqc/raw_{wildcards.sample} -name '*_fastqc.zip' -print -quit)" {output.zip}
         """
 
 # Stage 2: Paired-end trimming
@@ -272,6 +271,7 @@ rule filter:
 # Stage 8: MultiQC
 rule multiqc:
     input:
+        fastqc=expand("work/fastqc/{sample}_fastqc.zip", sample=SAMPLES),
         fastp=expand("work/trim/{sample}_fastp.json", sample=SAMPLES),
         metrics=expand("work/markdup/{sample}.duplicate_metrics.txt", sample=SAMPLES)
     output:

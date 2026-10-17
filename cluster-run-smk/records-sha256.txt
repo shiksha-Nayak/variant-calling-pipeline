@@ -1,0 +1,7 @@
+Week 4 Nextflow records SHA256:
+67f44e2013d07191c9fc5e799a98c715815e1baea83e2641cb90ec1fd554fe87
+
+Week 5 Snakemake records SHA256:
+a35ec1b6cf265f76a90c7b391ef4d5cb98f4155ef00ec029d0b0bb42a6c91ccd
+
+The record checksums differ. The Nextflow workflow uses GenomicsDBImport and QD/FS-based variant filtering, whereas the Snakemake workflow uses CombineGVCFs and QUAL-based filtering. These differences can affect variant records and annotations.

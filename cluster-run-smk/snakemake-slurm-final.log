@@ -1,0 +1,267 @@
+Using profile profiles/explorer for setting default command line arguments.
+Config file config.yaml is extended by additional config specified via the command line.
+
+SNAKEMAKE
+=========
+  Date: 2026-10-16 19:50:57
+  Workflow ID: 82908a9f-3512-4413-9512-b9591ed43508
+  Platform: Linux-5.14.0-362.13.1.el9_3.x86_64-x86_64-with-glibc2.34
+  Host: c0642
+  User: nayak.shi
+  Snakemake version: 9.27.0
+  Python version: 3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]
+  Command: /courses/BINF6610.202710/shared/env/binf6610-workflows/bin/snakemake --profile profiles/explorer --config samplesheet=/courses/BINF6610.202710/data/samplesheet-variant8.csv ref=/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa region=chr20:1-10000000 outdir=results-smk
+  Snakefile: /home/nayak.shi/variant-calling-pipeline/Snakefile
+  Base directory: /home/nayak.shi/variant-calling-pipeline
+  Run directory: /home/nayak.shi/variant-calling-pipeline
+  Working directory: /home/nayak.shi/variant-calling-pipeline
+  Config file(s): [PosixPath('/home/nayak.shi/variant-calling-pipeline/profiles/explorer/platform.yaml'), 'config.yaml']
+  Config MD5: 65e87681be929b0d4dc48ce3cc4721c8
+
+Building DAG of jobs...
+You are running snakemake in a SLURM job context. This is not recommended, as it may lead to unexpected behavior. If possible, please run Snakemake directly on the login node.
+SLURM run ID: 2a54be2d-7002-4c17-b2b6-8b17af78a8d0
+MinJobAge 300s (>= 120s). 'squeue' should work reliably for status queries.
+Using shell: /usr/bin/bash
+Provided remote nodes: 20
+Job stats:
+job        count
+-------  -------
+fastqc         8
+multiqc        1
+publish        1
+all            1
+total         11
+
+Select jobs to execute...
+Execute 8 jobs...
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12891_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12891_R2.fastq.gz
+    output: work/fastqc/NA12891_fastqc.html, work/fastqc/NA12891_fastqc.zip
+    log: logs/fastqc/NA12891.log
+    jobid: 38
+    reason: Missing output files: work/fastqc/NA12891_fastqc.zip
+    wildcards: sample=NA12891
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12891
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12891             /courses/BINF6610.202710/data/fastq-variant/NA12891_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA12891_R2.fastq.gz 2> logs/fastqc/NA12891.log
+        cp "$(find work/fastqc/raw_NA12891 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12891_fastqc.html
+        cp "$(find work/fastqc/raw_NA12891 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12891_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12892_R1.fastq.gz
+    output: work/fastqc/NA12892_fastqc.html, work/fastqc/NA12892_fastqc.zip
+    log: logs/fastqc/NA12892.log
+    jobid: 39
+    reason: Missing output files: work/fastqc/NA12892_fastqc.zip
+    wildcards: sample=NA12892
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12892
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12892             /courses/BINF6610.202710/data/fastq-variant/NA12892_R1.fastq.gz 2> logs/fastqc/NA12892.log
+        cp "$(find work/fastqc/raw_NA12892 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12892_fastqc.html
+        cp "$(find work/fastqc/raw_NA12892 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12892_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12003_R1.fastq.gz
+    output: work/fastqc/NA12003_fastqc.html, work/fastqc/NA12003_fastqc.zip
+    log: logs/fastqc/NA12003.log
+    jobid: 41
+    reason: Missing output files: work/fastqc/NA12003_fastqc.zip
+    wildcards: sample=NA12003
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12003
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12003             /courses/BINF6610.202710/data/fastq-variant/NA12003_R1.fastq.gz 2> logs/fastqc/NA12003.log
+        cp "$(find work/fastqc/raw_NA12003 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12003_fastqc.html
+        cp "$(find work/fastqc/raw_NA12003 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12003_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12813_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12813_R2.fastq.gz
+    output: work/fastqc/NA12813_fastqc.html, work/fastqc/NA12813_fastqc.zip
+    log: logs/fastqc/NA12813.log
+    jobid: 43
+    reason: Missing output files: work/fastqc/NA12813_fastqc.zip
+    wildcards: sample=NA12813
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12813
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12813             /courses/BINF6610.202710/data/fastq-variant/NA12813_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA12813_R2.fastq.gz 2> logs/fastqc/NA12813.log
+        cp "$(find work/fastqc/raw_NA12813 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12813_fastqc.html
+        cp "$(find work/fastqc/raw_NA12813 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12813_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12878_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12878_R2.fastq.gz
+    output: work/fastqc/NA12878_fastqc.html, work/fastqc/NA12878_fastqc.zip
+    log: logs/fastqc/NA12878.log
+    jobid: 37
+    reason: Missing output files: work/fastqc/NA12878_fastqc.zip
+    wildcards: sample=NA12878
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12878
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12878             /courses/BINF6610.202710/data/fastq-variant/NA12878_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA12878_R2.fastq.gz 2> logs/fastqc/NA12878.log
+        cp "$(find work/fastqc/raw_NA12878 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12878_fastqc.html
+        cp "$(find work/fastqc/raw_NA12878 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12878_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA07357_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA07357_R2.fastq.gz
+    output: work/fastqc/NA07357_fastqc.html, work/fastqc/NA07357_fastqc.zip
+    log: logs/fastqc/NA07357.log
+    jobid: 40
+    reason: Missing output files: work/fastqc/NA07357_fastqc.zip
+    wildcards: sample=NA07357
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA07357
+        fastqc --threads 2             --outdir work/fastqc/raw_NA07357             /courses/BINF6610.202710/data/fastq-variant/NA07357_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA07357_R2.fastq.gz 2> logs/fastqc/NA07357.log
+        cp "$(find work/fastqc/raw_NA07357 -name '*_fastqc.html' -print -quit)" work/fastqc/NA07357_fastqc.html
+        cp "$(find work/fastqc/raw_NA07357 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA07357_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA10851_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA10851_R2.fastq.gz
+    output: work/fastqc/NA10851_fastqc.html, work/fastqc/NA10851_fastqc.zip
+    log: logs/fastqc/NA10851.log
+    jobid: 42
+    reason: Missing output files: work/fastqc/NA10851_fastqc.zip
+    wildcards: sample=NA10851
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA10851
+        fastqc --threads 2             --outdir work/fastqc/raw_NA10851             /courses/BINF6610.202710/data/fastq-variant/NA10851_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA10851_R2.fastq.gz 2> logs/fastqc/NA10851.log
+        cp "$(find work/fastqc/raw_NA10851 -name '*_fastqc.html' -print -quit)" work/fastqc/NA10851_fastqc.html
+        cp "$(find work/fastqc/raw_NA10851 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA10851_fastqc.zip
+        
+
+[Fri Oct 16 19:50:59 2026]
+rule fastqc:
+    input: work/validate/samplesheet.csv, /courses/BINF6610.202710/data/fastq-variant/NA12873_R1.fastq.gz, /courses/BINF6610.202710/data/fastq-variant/NA12873_R2.fastq.gz
+    output: work/fastqc/NA12873_fastqc.html, work/fastqc/NA12873_fastqc.zip
+    log: logs/fastqc/NA12873.log
+    jobid: 44
+    reason: Missing output files: work/fastqc/NA12873_fastqc.zip
+    wildcards: sample=NA12873
+    threads: 2
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/fastqc/raw_NA12873
+        fastqc --threads 2             --outdir work/fastqc/raw_NA12873             /courses/BINF6610.202710/data/fastq-variant/NA12873_R1.fastq.gz /courses/BINF6610.202710/data/fastq-variant/NA12873_R2.fastq.gz 2> logs/fastqc/NA12873.log
+        cp "$(find work/fastqc/raw_NA12873 -name '*_fastqc.html' -print -quit)" work/fastqc/NA12873_fastqc.html
+        cp "$(find work/fastqc/raw_NA12873 -name '*_fastqc.zip' -print -quit)" work/fastqc/NA12873_fastqc.zip
+        
+Job 38 has been submitted with SLURM jobid 11149529 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12891/11149529.log).
+Job 39 has been submitted with SLURM jobid 11149530 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12892/11149530.log).
+Job 41 has been submitted with SLURM jobid 11149531 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12003/11149531.log).
+Job 43 has been submitted with SLURM jobid 11149532 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12813/11149532.log).
+Job 37 has been submitted with SLURM jobid 11149534 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12878/11149534.log).
+Job 40 has been submitted with SLURM jobid 11149535 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA07357/11149535.log).
+Job 42 has been submitted with SLURM jobid 11149536 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA10851/11149536.log).
+Job 44 has been submitted with SLURM jobid 11149537 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_fastqc/NA12873/11149537.log).
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 38 (Rule: fastqc)
+1 of 11 steps (9%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 39 (Rule: fastqc)
+2 of 11 steps (18%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 43 (Rule: fastqc)
+3 of 11 steps (27%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 41 (Rule: fastqc)
+4 of 11 steps (36%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 37 (Rule: fastqc)
+5 of 11 steps (45%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 40 (Rule: fastqc)
+6 of 11 steps (55%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 42 (Rule: fastqc)
+7 of 11 steps (64%) done
+[Fri Oct 16 19:51:38 2026]
+Finished jobid: 44 (Rule: fastqc)
+8 of 11 steps (73%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Oct 16 19:51:38 2026]
+rule multiqc:
+    input: work/fastqc/NA12878_fastqc.zip, work/fastqc/NA12891_fastqc.zip, work/fastqc/NA12892_fastqc.zip, work/fastqc/NA07357_fastqc.zip, work/fastqc/NA12003_fastqc.zip, work/fastqc/NA10851_fastqc.zip, work/fastqc/NA12813_fastqc.zip, work/fastqc/NA12873_fastqc.zip, work/trim/NA12878_fastp.json, work/trim/NA12891_fastp.json, work/trim/NA12892_fastp.json, work/trim/NA07357_fastp.json, work/trim/NA12003_fastp.json, work/trim/NA10851_fastp.json, work/trim/NA12813_fastp.json, work/trim/NA12873_fastp.json, work/markdup/NA12878.duplicate_metrics.txt, work/markdup/NA12891.duplicate_metrics.txt, work/markdup/NA12892.duplicate_metrics.txt, work/markdup/NA07357.duplicate_metrics.txt, work/markdup/NA12003.duplicate_metrics.txt, work/markdup/NA10851.duplicate_metrics.txt, work/markdup/NA12813.duplicate_metrics.txt, work/markdup/NA12873.duplicate_metrics.txt
+    output: results-smk/multiqc_report.html
+    log: logs/multiqc.log
+    jobid: 36
+    reason: Input files updated by another job: work/fastqc/NA12003_fastqc.zip, work/fastqc/NA07357_fastqc.zip, work/fastqc/NA12892_fastqc.zip, work/fastqc/NA12873_fastqc.zip, work/fastqc/NA12813_fastqc.zip, work/fastqc/NA10851_fastqc.zip, work/fastqc/NA12878_fastqc.zip, work/fastqc/NA12891_fastqc.zip; Set of input files has changed since last execution
+    resources: tmpdir=<TBD>, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        mkdir -p work/multiqc
+        multiqc -q -f -o work/multiqc work/fastqc/NA12878_fastqc.zip work/fastqc/NA12891_fastqc.zip work/fastqc/NA12892_fastqc.zip work/fastqc/NA07357_fastqc.zip work/fastqc/NA12003_fastqc.zip work/fastqc/NA10851_fastqc.zip work/fastqc/NA12813_fastqc.zip work/fastqc/NA12873_fastqc.zip work/trim/NA12878_fastp.json work/trim/NA12891_fastp.json work/trim/NA12892_fastp.json work/trim/NA07357_fastp.json work/trim/NA12003_fastp.json work/trim/NA10851_fastp.json work/trim/NA12813_fastp.json work/trim/NA12873_fastp.json work/markdup/NA12878.duplicate_metrics.txt work/markdup/NA12891.duplicate_metrics.txt work/markdup/NA12892.duplicate_metrics.txt work/markdup/NA07357.duplicate_metrics.txt work/markdup/NA12003.duplicate_metrics.txt work/markdup/NA10851.duplicate_metrics.txt work/markdup/NA12813.duplicate_metrics.txt work/markdup/NA12873.duplicate_metrics.txt 2> logs/multiqc.log
+        cp work/multiqc/multiqc_report.html results-smk/multiqc_report.html
+        
+Job 36 has been submitted with SLURM jobid 11149543 (log: /home/nayak.shi/variant-calling-pipeline/.snakemake/slurm_logs/rule_multiqc/11149543.log).
+[Fri Oct 16 19:52:19 2026]
+Finished jobid: 36 (Rule: multiqc)
+9 of 11 steps (82%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Oct 16 19:52:19 2026]
+localrule publish:
+    input: work/validate/samplesheet.csv, results-smk/cohort.filtered.vcf.gz, results-smk/cohort.filtered.vcf.gz.tbi, results-smk/variants.tsv, results-smk/multiqc_report.html
+    output: results-smk/manifest.json, results-smk/samples.tsv
+    log: logs/publish.log
+    jobid: 45
+    reason: Input files updated by another job: results-smk/multiqc_report.html
+    resources: tmpdir=/tmp, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: 
+        printf 'sample_id\tcondition\n' > results-smk/samples.tsv
+        awk -F, 'NR == 1 { for (i = 1; i <= NF; i++) col[$i] = i; next }
+                 { print $col["sample_id"] "\t" $col["condition"] }' work/validate/samplesheet.csv >> results-smk/samples.tsv
+
+        # The manifest checksums copies of exactly what this run published.
+        rm -rf work/publish && mkdir -p work/publish/published
+        cp results-smk/cohort.filtered.vcf.gz results-smk/cohort.filtered.vcf.gz.tbi results-smk/variants.tsv results-smk/multiqc_report.html results-smk/samples.tsv work/publish/published/
+
+        NAME=variant-call VERSION=1.0.0 REVISION=none COMMIT=none RUN_NAME=snakemake-20261016T195057 STARTED_AT=2026-10-16T19:50:57.873117-04:00 LAUNCH_DIR=/home/nayak.shi/variant-calling-pipeline ENGINE='snakemake 9.27.0' PLATFORM=singularity-hpc EXECUTOR=slurm PARAMS='platform=singularity-hpc executor=slurm samplesheet=/courses/BINF6610.202710/data/samplesheet-variant8.csv ref=/courses/BINF6610.202710/data/refs/grch38-1000g/GRCh38_full_analysis_set_plus_decoy_hla.fa region=chr20:1-10000000 outdir=results-smk' CONTAINERS='tools=community.wave.seqera.io/library/coreutils_gawk_gzip:7c58ccc2f9ca6bcc fastqc=quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0 fastp=community.wave.seqera.io/library/fastp:1.3.7--075357a9d5c82494 bwa=community.wave.seqera.io/library/bwa_samtools:22527ddb3cc80fb3 gatk=community.wave.seqera.io/library/gatk4_samtools_bcftools:1adede7d418fb46b multiqc=quay.io/biocontainers/multiqc:1.35--pyhdfd78af_2' /home/nayak.shi/variant-calling-pipeline/bin/run_manifest.sh work/publish/published work/validate/samplesheet.csv > results-smk/manifest.json 2> logs/publish.log
+        
+Activating singularity image /courses/BINF6610.202710/shared/snakemake-images/73238fbd483f441147d13443b775204c.simg
+[Fri Oct 16 19:52:19 2026]
+Finished jobid: 45 (Rule: publish)
+10 of 11 steps (91%) done
+Select jobs to execute...
+Execute 1 jobs...
+
+[Fri Oct 16 19:52:19 2026]
+localrule all:
+    input: results-smk/cohort.filtered.vcf.gz, results-smk/variants.tsv, results-smk/multiqc_report.html, results-smk/samples.tsv, results-smk/manifest.json
+    jobid: 0
+    reason: Input files updated by another job: results-smk/multiqc_report.html, results-smk/manifest.json, results-smk/samples.tsv
+    resources: tmpdir=/tmp, mem_mb=2000, mem=2 GB, mem_mib=1908, disk_mb=1000, disk=1 GB, disk_mib=954, slurm_account=binf6610.202710, slurm_partition=courses, runtime=30
+Shell command: None
+[Fri Oct 16 19:52:19 2026]
+Finished jobid: 0 (Rule: all)
+11 of 11 steps (100%) done
+Cleaning up SLURM log files older than 10 day(s).
+Complete log(s): /home/nayak.shi/variant-calling-pipeline/.snakemake/log/2026-10-16T195057.297118.snakemake.log
+Elapsed time: 0:02:02.037829
