@@ -49,6 +49,6 @@ python3 stages/10_export_tsv.py \
     "$OUTDIR"
 
 echo "Stage 9: Publish final outputs" >&2
-bash stages/09_publish.sh "$OUTDIR" "$REF" "$REGION"
+bash stages/09_publish.sh "$OUTDIR" "$REF" "$REGION" "$SAMPLESHEET"
 
 echo "Pipeline completed successfully!" >&2

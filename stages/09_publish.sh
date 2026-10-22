@@ -4,6 +4,7 @@ set -euo pipefail
 OUTDIR="${1:?Usage: 09_publish.sh output_dir reference region}"
 REF="${2:?Missing reference}"
 REGION="${3:?Missing region}"
+SAMPLESHEET="${4:?Missing samplesheet}"
 
 VCF="$OUTDIR/variants/cohort.filtered.vcf.gz"
 TSV="$OUTDIR/variants.tsv"
@@ -25,6 +26,6 @@ if [[ -f "$VCF.tbi" ]]; then
     cp "$VCF.tbi" "$OUTDIR/cohort.filtered.vcf.gz.tbi"
 fi
 
-bash lib/write_manifest.sh "$OUTDIR" "$REF" "$REGION" "$SAMPLE_MAP"
+bash lib/write_manifest.sh "$OUTDIR" "$REF" "$REGION" "$SAMPLE_MAP" "$SAMPLESHEET"
 
 echo "Publishing completed." >&2
