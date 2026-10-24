@@ -1,0 +1,16 @@
+AWS Batch Bash vs. Nextflow AWS Batch — Variant Comparison
+
+Both pipelines completed successfully and produced 2,965 variant records.
+
+Complete variant-record SHA-256 checksums differ:
+Bash:     342f453e1145eeb7cbaa6feb26ab647a93517912c3209e3870421883e4735dae
+Nextflow: 2a76e66cc7cb22b13facaf858a4aa9ac23c911994949f54d2b5d23b877eae8f3
+
+Variant identity checksums (CHROM, POS, REF, ALT) match:
+af02efeca4106f97051e13e641281fca74841d7bfa8da4f4afe640ebd23517aa
+
+The pipelines identified the same 2,965 variants in the same order.
+However, some depth and genotype annotation values differ.
+The precise cause of those differences has not been established.
+
+The original VCF files and checksums have been preserved unchanged.

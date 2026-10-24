@@ -69,13 +69,15 @@ if missing:
     raise SystemExit("Sample IDs missing from samplesheet: " + ", ".join(missing))
 samples = [by_id[sid] for sid in mapped_ids]
 
-try:
-    git_sha = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=repo_dir,
-        text=True, stderr=subprocess.DEVNULL,
-    ).strip()
-except (OSError, subprocess.CalledProcessError):
-    raise SystemExit("Cannot determine git commit SHA")
+git_sha = os.environ.get("PIPELINE_GIT_SHA", "").strip()
+if not git_sha:
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=repo_dir,
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        raise SystemExit("Cannot determine git commit SHA")
 
 outputs = []
 for relative, stage, kind in (
@@ -118,6 +120,9 @@ finished = utc_now()
 started = os.environ.get("PIPELINE_STARTED_AT", finished)
 platform = {
     "kind": platform_kind,
+    "batch_job_id": os.environ.get("AWS_BATCH_JOB_ID", "none"),
+    "batch_queue": os.environ.get("BATCH_QUEUE_NAME", "none"),
+    "batch_compute_environment": os.environ.get("BATCH_CE_NAME", "none"),
     "container": os.environ.get("APPTAINER_CONTAINER", "unknown"),
     "slurm_job_id": os.environ.get("SLURM_JOB_ID", "unknown"),
     "slurm_cpus_per_task": os.environ.get("SLURM_CPUS_PER_TASK", "unknown"),
@@ -127,7 +132,7 @@ manifest = {
     "pipeline": {
         "name": "variant-call",
         "version": "1.0.0",
-        "implementation": "bash",
+        "implementation": "aws-batch" if platform_kind == "aws-batch" else "bash",
         "git_sha": git_sha,
         "run_id": os.environ.get("PIPELINE_RUN_ID", str(uuid.uuid4())),
         "started_at": started,

@@ -1,0 +1,4 @@
+AWS Batch Bash pipeline variant records:
+342f453e1145eeb7cbaa6feb26ab647a93517912c3209e3870421883e4735dae  -
+Nextflow AWS Batch variant records:
+2a76e66cc7cb22b13facaf858a4aa9ac23c911994949f54d2b5d23b877eae8f3  -

@@ -19,7 +19,7 @@ workflow {
     // Read reference files as value channels
     ref       = file(params.ref)
     ref_index = files("${params.ref}.*")
-    ref_dict  = file("${ref.parent}/${ref.baseName}.dict")
+    ref_dict  = ref.resolveSibling("${ref.baseName}.dict")
     
     // Read samplesheet and create channel
     sheet = file(params.samplesheet)

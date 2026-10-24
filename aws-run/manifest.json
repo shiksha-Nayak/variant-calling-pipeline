@@ -1,0 +1,76 @@
+{
+  "pipeline": {
+    "name": "variant-call",
+    "version": "1.0.0",
+    "implementation": "aws-batch",
+    "git_sha": "bc712b82ae0f591c9bc7d088831141df1f848daa",
+    "run_id": "43394e26-8dea-48e2-ae61-ebd7a2d9781e",
+    "started_at": "2026-10-24T01:57:37+00:00",
+    "finished_at": "2026-10-24T01:57:37+00:00",
+    "exit_status": "success"
+  },
+  "platform": {
+    "kind": "aws-batch",
+    "batch_job_id": "f81fb71d-1b09-454d-932e-211e21a86882",
+    "batch_queue": "binf6610-queue",
+    "batch_compute_environment": "binf6610-fargate",
+    "container": "unknown",
+    "slurm_job_id": "unknown",
+    "slurm_cpus_per_task": "unknown"
+  },
+  "reference": {
+    "genome": "/tmp/run.PWBFmm/data/smoke.fa",
+    "region": "smoke_1mb"
+  },
+  "samples": [
+    {
+      "sample_id": "smoke_01",
+      "condition": "unaffected",
+      "library_type": "paired"
+    },
+    {
+      "sample_id": "smoke_02",
+      "condition": "affected",
+      "library_type": "paired"
+    },
+    {
+      "sample_id": "smoke_03",
+      "condition": "affected",
+      "library_type": "single"
+    }
+  ],
+  "outputs": [
+    {
+      "stage": "publish",
+      "type": "filtered_vcf",
+      "path": "cohort.filtered.vcf.gz",
+      "checksum": "sha256:70037ac6f235aa241fe05a05f7c8c49667750713b4e8cbfa930e52dec3d92b75"
+    },
+    {
+      "stage": "publish",
+      "type": "vcf_index",
+      "path": "cohort.filtered.vcf.gz.tbi",
+      "checksum": "sha256:b2cc9a58406a4ecb40ba861da93aab0284d27f6b5d3a39f16a0bed07e78a889f"
+    },
+    {
+      "stage": "publish",
+      "type": "variant_table",
+      "path": "variants.tsv",
+      "checksum": "sha256:217a5488af0f739afb3ab8ba1cd099c8cfe3b8d7c44b62881a0551ceee1d227d"
+    },
+    {
+      "stage": "qc_report",
+      "type": "multiqc_report",
+      "path": "qc/multiqc_report.html",
+      "checksum": "sha256:3b7b14c2f74bb6bf90dfd25022ba4c254ec9a08d41d62d8c5fe71acb80160860"
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "pass_variant_count",
+      "value": 2965,
+      "stage": "publish",
+      "unit": "variants"
+    }
+  ]
+}

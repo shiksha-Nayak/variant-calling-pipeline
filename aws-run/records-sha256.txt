@@ -1,0 +1,4 @@
+Original smoke-run variant records:
+342f453e1145eeb7cbaa6feb26ab647a93517912c3209e3870421883e4735dae  -
+AWS Batch variant records:
+342f453e1145eeb7cbaa6feb26ab647a93517912c3209e3870421883e4735dae  -
