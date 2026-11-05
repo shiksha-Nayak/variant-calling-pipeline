@@ -13,8 +13,8 @@ THREADS="${SLURM_CPUS_PER_TASK:-1}"
 mkdir -p "$OUTDIR/variants"
 
 SAMPLE_MAP="$OUTDIR/sample_map.txt"
-TMP_BASE="${TMPDIR:?TMPDIR must be set}"
-WORKSPACE="${TMPDIR}/genomicsdb"
+TMP_BASE="${TMPDIR:-$OUTDIR/tmp}"
+WORKSPACE="$TMP_BASE/genomicsdb"
 
 mkdir -p "$TMP_BASE"
 rm -rf "$WORKSPACE"
