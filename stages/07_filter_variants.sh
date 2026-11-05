@@ -15,6 +15,6 @@ gatk VariantFiltration \
     -V "$INPUT" \
     -O "$OUTPUT" \
     --filter-name "LowQual" \
-    --filter-expression "QUAL < 300"
+    --filter-expression "QUAL < 30"
 
 echo "Variant filtering completed: $OUTPUT" >&2
