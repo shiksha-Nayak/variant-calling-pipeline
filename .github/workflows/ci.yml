@@ -1,4 +1,4 @@
-# CI: the checks every change gets, on GitHub's machine, before it joins main.
+-v "$PWD":/repo -w /repo \# CI: the checks every change gets, on GitHub's machine, before it joins main.
 #
 # Two jobs, the cheap one first. `lint` reads the scripts and needs nothing else;
 # `smoke` builds the image and runs the whole pipeline on the smoke dataset, and
@@ -38,9 +38,9 @@ jobs:
       - name: Run the pipeline on the smoke dataset, inside the image
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
-            -v "$PWD":/repo -w /repo/tests/smoke \
+            -v "$PWD":/repo -w /repo \
             -e REF=/repo/tests/smoke/smoke.fa -e REGION=smoke_1mb -e THREADS=4 \
-            variant-call:ci bash /repo/run_pipeline.sh samplesheet.csv /repo/ci-out
+            variant-call:ci bash /repo/run_pipeline.sh tests/smoke/samplesheet.csv /repo/ci-out
 
       - name: Check the manifest against the course's contract
         run: python3 tools/check_manifest.py ci-out/results/manifest.json --results-dir ci-out/results
