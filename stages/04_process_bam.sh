@@ -18,7 +18,7 @@ while IFS=$'\t' read -r sample_id condition replicate library_type r1_fastq r2_f
     MARKED="$OUTDIR/markdup/${sample_id}.markdup.bam"
     METRICS="$OUTDIR/markdup/${sample_id}.duplicate_metrics.txt"
 
-    samtools sort -@ "$THREADS" -T "${TMPDIR}/sort" -o "$SORTED" "$SAM"
+    samtools sort -@ "$THREADS" -T "$OUTDIR/sorted/${sample_id}.tmp" -o "$SORTED" "$SAM"
     samtools index "$SORTED"
 
     gatk MarkDuplicates \
