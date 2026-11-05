@@ -1,4 +1,4 @@
--v "$PWD":/repo -w /repo \# CI: the checks every change gets, on GitHub's machine, before it joins main.
+# CI: Automated checks before changes join main.
 #
 # Two jobs, the cheap one first. `lint` reads the scripts and needs nothing else;
 # `smoke` builds the image and runs the whole pipeline on the smoke dataset, and
