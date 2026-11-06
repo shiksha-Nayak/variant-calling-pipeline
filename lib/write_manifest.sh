@@ -69,7 +69,7 @@ if missing:
     raise SystemExit("Sample IDs missing from samplesheet: " + ", ".join(missing))
 samples = [by_id[sid] for sid in mapped_ids]
 
-git_sha = os.environ.get("PIPELINE_GIT_SHA", "").strip()
+git_sha = (os.environ.get("GIT_SHA") or os.environ.get("PIPELINE_GIT_SHA") or "").strip()
 if not git_sha:
     try:
         git_sha = subprocess.check_output(

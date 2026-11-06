@@ -17,3 +17,7 @@ work/
 *.sam
 *.sif
 *.backup
+tests
+.github
+ci-out
+cd-run*
