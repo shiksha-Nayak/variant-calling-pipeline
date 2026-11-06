@@ -1,0 +1,76 @@
+{
+  "pipeline": {
+    "name": "variant-call",
+    "version": "1.0.0",
+    "implementation": "aws-batch",
+    "git_sha": "463204823f8e075afc1db58c012df661b0188790",
+    "run_id": "58c6269a-acbe-409c-8f36-f9728ed175d1",
+    "started_at": "2026-11-06T17:00:01+00:00",
+    "finished_at": "2026-11-06T17:00:01+00:00",
+    "exit_status": "success"
+  },
+  "platform": {
+    "kind": "aws-batch",
+    "batch_job_id": "a77a1fee-c812-4601-910a-03fdaffb0878",
+    "batch_queue": "none",
+    "batch_compute_environment": "none",
+    "container": "unknown",
+    "slurm_job_id": "unknown",
+    "slurm_cpus_per_task": "unknown"
+  },
+  "reference": {
+    "genome": "/tmp/run.9sMngW/data/smoke.fa",
+    "region": "smoke_1mb"
+  },
+  "samples": [
+    {
+      "sample_id": "smoke_01",
+      "condition": "unaffected",
+      "library_type": "paired"
+    },
+    {
+      "sample_id": "smoke_02",
+      "condition": "affected",
+      "library_type": "paired"
+    },
+    {
+      "sample_id": "smoke_03",
+      "condition": "affected",
+      "library_type": "single"
+    }
+  ],
+  "outputs": [
+    {
+      "stage": "publish",
+      "type": "filtered_vcf",
+      "path": "cohort.filtered.vcf.gz",
+      "checksum": "sha256:668314b565e9ea614d8912f658c2bb972fa4cf89f6c62f74920027bc55bd8c9c"
+    },
+    {
+      "stage": "publish",
+      "type": "vcf_index",
+      "path": "cohort.filtered.vcf.gz.tbi",
+      "checksum": "sha256:b2cc9a58406a4ecb40ba861da93aab0284d27f6b5d3a39f16a0bed07e78a889f"
+    },
+    {
+      "stage": "publish",
+      "type": "variant_table",
+      "path": "variants.tsv",
+      "checksum": "sha256:217a5488af0f739afb3ab8ba1cd099c8cfe3b8d7c44b62881a0551ceee1d227d"
+    },
+    {
+      "stage": "qc_report",
+      "type": "multiqc_report",
+      "path": "qc/multiqc_report.html",
+      "checksum": "sha256:cbfd4b19762502c7a8603de5bcb97f3306cf9d39f8639b777debc5827d147d2d"
+    }
+  ],
+  "metrics": [
+    {
+      "metric": "pass_variant_count",
+      "value": 2965,
+      "stage": "publish",
+      "unit": "variants"
+    }
+  ]
+}
