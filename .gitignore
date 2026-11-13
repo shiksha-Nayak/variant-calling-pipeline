@@ -28,3 +28,6 @@ results/
 slurm/*.out
 results-smk/
 .java/
+
+# Local SQLite databases
+*.db
